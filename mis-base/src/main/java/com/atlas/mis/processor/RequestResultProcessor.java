@@ -1,14 +1,13 @@
 package com.atlas.mis.processor;
 
-import java.util.Collections;
-import javax.ws.rs.core.Response;
-
+import builder.ResultBuilder;
 import com.app.rest.util.stream.Collectors;
 import com.app.rest.util.stream.Mappers;
 import com.atlas.mis.model.MapData;
 import com.atlas.mis.rest.ResultObjectFactory;
 
-import builder.ResultBuilder;
+import javax.ws.rs.core.Response;
+import java.util.Collections;
 
 public class RequestResultProcessor {
    private static final Object lock = new Object();
@@ -52,5 +51,29 @@ public class RequestResultProcessor {
             .stream()
             .map(ResultObjectFactory::createReactor)
             .collect(Collectors.toResultBuilder());
+   }
+
+   public ResultBuilder getMapPortalByName(int mapId, String name) {
+      return MapProcessor.getInstance().getMapData(mapId)
+            .map(MapData::portals)
+            .orElse(Collections.emptyList())
+            .stream()
+            .filter(portal -> portal.name().equalsIgnoreCase(name))
+            .findFirst()
+            .map(ResultObjectFactory::createPortal)
+            .map(Mappers::singleOkResult)
+            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
+   }
+
+   public ResultBuilder getMapPortalById(int mapId, int portalId) {
+      return MapProcessor.getInstance().getMapData(mapId)
+            .map(MapData::portals)
+            .orElse(Collections.emptyList())
+            .stream()
+            .filter(portal -> portal.id() == portalId)
+            .findFirst()
+            .map(ResultObjectFactory::createPortal)
+            .map(Mappers::singleOkResult)
+            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
    }
 }
