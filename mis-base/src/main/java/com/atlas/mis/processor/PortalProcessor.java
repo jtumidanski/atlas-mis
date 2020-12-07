@@ -36,29 +36,36 @@ public class PortalProcessor {
 
    public PortalData createPortal(int type, MapleData portal) {
       int id;
-      String name = MapleDataTool.getString(portal.getChildByPath("pn"));
       if (type == PortalType.DOOR.getType()) {
          synchronized (registryLock) {
             id = portalId.incrementAndGet();
          }
       } else {
-         id = Integer.parseInt(portal.getName());
+         id = Integer.parseInt(portal.name());
       }
 
       return new PortalBuilder(id, type)
-            .setName(name)
-            .setTarget(MapleDataTool.getString(portal.getChildByPath("tn")))
-            .setTargetMap(MapleDataTool.getInt(portal.getChildByPath("tm")))
-            .setPosition(MapleDataTool.getInt(portal.getChildByPath("x")), MapleDataTool.getInt(portal.getChildByPath("y")))
+            .setName(portal.childByPath("pn")
+                  .flatMap(MapleDataTool::getString)
+                  .orElse(""))
+            .setTarget(portal.childByPath("tn")
+                  .flatMap(MapleDataTool::getString)
+                  .orElse(""))
+            .setTargetMap(portal.childByPath("tm")
+                  .flatMap(MapleDataTool::getInteger)
+                  .orElse(0))
+            .setPosition(portal.childByPath("x")
+                        .flatMap(MapleDataTool::getInteger)
+                        .orElse(0),
+                  portal.childByPath("y")
+                        .flatMap(MapleDataTool::getInteger)
+                        .orElse(0))
             .setScriptName(getPortalScriptName(portal))
             .build();
    }
 
    protected String getPortalScriptName(MapleData portal) {
-      String script = MapleDataTool.getString("script", portal, null);
-      if (script != null && script.equals("")) {
-         script = null;
-      }
-      return script;
+      return MapleDataTool.getString("script", portal)
+            .orElse("");
    }
 }
