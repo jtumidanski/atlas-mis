@@ -1,10 +1,15 @@
 package com.atlas.mis.rest;
 
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.atlas.mis.processor.RequestResultProcessor;
+import com.atlas.mis.rest.processor.RequestResultProcessor;
 
 @Path("maps")
 public class MapResource {
@@ -13,7 +18,7 @@ public class MapResource {
    @Consumes(MediaType.APPLICATION_JSON)
    @Produces(MediaType.APPLICATION_JSON)
    public Response getMap(@PathParam("mapId") Integer mapId) {
-      return RequestResultProcessor.getInstance().getMap(mapId).build();
+      return RequestResultProcessor.getMap(mapId).build();
    }
 
    @GET
@@ -23,9 +28,9 @@ public class MapResource {
    public Response getMapPortals(@PathParam("mapId") Integer mapId,
                                  @QueryParam("name") String name) {
       if (name != null) {
-         return RequestResultProcessor.getInstance().getMapPortalByName(mapId, name).build();
+         return RequestResultProcessor.getMapPortalByName(mapId, name).build();
       }
-      return RequestResultProcessor.getInstance().getMapPortals(mapId).build();
+      return RequestResultProcessor.getMapPortals(mapId).build();
    }
 
    @GET
@@ -33,7 +38,7 @@ public class MapResource {
    @Consumes(MediaType.APPLICATION_JSON)
    @Produces(MediaType.APPLICATION_JSON)
    public Response getMapPortalById(@PathParam("mapId") Integer mapId, @PathParam("portalId") Integer portalId) {
-      return RequestResultProcessor.getInstance().getMapPortalById(mapId, portalId).build();
+      return RequestResultProcessor.getMapPortalById(mapId, portalId).build();
    }
 
    @GET
@@ -41,6 +46,6 @@ public class MapResource {
    @Consumes(MediaType.APPLICATION_JSON)
    @Produces(MediaType.APPLICATION_JSON)
    public Response getMapReactors(@PathParam("mapId") Integer mapId) {
-      return RequestResultProcessor.getInstance().getMapReactors(mapId).build();
+      return RequestResultProcessor.getMapReactors(mapId).build();
    }
 }

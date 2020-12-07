@@ -1,93 +1,47 @@
 package com.atlas.mis.processor;
 
 import java.awt.*;
-import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import com.atlas.mis.DataRegistry;
 import com.atlas.mis.builder.FootholdTreeBuilder;
 import com.atlas.mis.builder.MapBuilder;
 import com.atlas.mis.model.BackgroundType;
 import com.atlas.mis.model.Foothold;
 import com.atlas.mis.model.FootholdTree;
+import com.atlas.mis.model.Life;
 import com.atlas.mis.model.MapData;
 import com.atlas.mis.model.PortalData;
 import com.atlas.mis.model.Reactor;
 import com.atlas.mis.model.TimeMob;
-import com.atlas.mis.model.XLimit;
 import com.atlas.mis.util.StringUtil;
 import com.atlas.shared.wz.MapleData;
-import com.atlas.shared.wz.MapleDataProvider;
-import com.atlas.shared.wz.MapleDataProviderFactory;
 import com.atlas.shared.wz.MapleDataTool;
 
-public class MapProcessor {
-   private static final Object lock = new Object();
-
-   private static volatile MapProcessor instance;
-
-   protected final MapleData nameData;
-
-   protected final MapleDataProvider mapSource;
-
-   protected final Map<Integer, MapData> mapData;
-
-   protected static final Map<Integer, XLimit> dropBoundsCache = new HashMap<>(100);
-
-   public static MapProcessor getInstance() {
-      MapProcessor result = instance;
-      if (result == null) {
-         synchronized (lock) {
-            result = instance;
-            if (result == null) {
-               result = new MapProcessor();
-               instance = result;
-            }
-         }
-      }
-      return result;
-   }
-
+public final class MapProcessor {
    private MapProcessor() {
-      mapData = new ConcurrentHashMap<>();
-      nameData = MapleDataProviderFactory
-            .getDataProvider(new File("/service/wz/String.wz"))
-            .data("Map.img")
-            .orElseThrow();
-      mapSource = MapleDataProviderFactory
-            .getDataProvider(new File("/service/wz/Map.wz"));
    }
 
-   public Optional<MapData> getMapData(int mapId) {
-      if (!mapData.containsKey(mapId)) {
-         produceMapData(mapId).ifPresent(map -> {
-            mapData.put(mapId, map);
-            dropBoundsCache.put(mapId, map.xLimit());
-         });
-      }
-      return Optional.ofNullable(mapData.getOrDefault(mapId, null));
-   }
-
-   protected String getMapName(int mapId) {
+   protected static String getMapName(int mapId) {
       String mapName = StringUtil.getLeftPaddedStr(Integer.toString(mapId), '0', 9);
       int area = mapId / 100000000;
       mapName = "Map/Map" + area + "/" + mapName + ".img";
       return mapName;
    }
 
-   protected Optional<MapData> produceMapData(int mapId) {
+   public static Optional<MapData> produceMapData(int mapId) {
       String mapName = getMapName(mapId);
-      return mapSource.data(mapName)
+      return DataRegistry.getInstance()
+            .getMapSource()
+            .data(mapName)
             .map(mapData -> produceMapData(mapId, mapData));
    }
 
-   protected MapData produceMapData(int mapId, MapleData mapData) {
+   protected static MapData produceMapData(int mapId, MapleData mapData) {
       MapleData infoData = mapData.childByPath("info")
             .orElseThrow();
       String link = infoData.childByPath("link")
@@ -97,7 +51,9 @@ public class MapProcessor {
       if (!link.equals("")) {
          //nexon made hundreds of dojo maps so to reduce the size they added links.
          String mapName = getMapName(Integer.parseInt(link));
-         return mapSource.data(mapName)
+         return DataRegistry.getInstance()
+               .getMapSource()
+               .data(mapName)
                .map(newMapData -> produceMapData(mapId, newMapData, infoData))
                .orElse(produceMapData(mapId, mapData, infoData));
       } else {
@@ -105,7 +61,7 @@ public class MapProcessor {
       }
    }
 
-   protected MapData produceMapData(int mapId, MapleData mapData, MapleData infoData) {
+   protected static MapData produceMapData(int mapId, MapleData mapData, MapleData infoData) {
       //map.setEventInstance(event);
 
       MapBuilder mapBuilder = new MapBuilder(mapId)
@@ -149,7 +105,8 @@ public class MapProcessor {
             .setMobCapacity(MapleDataTool.getIntConvert("fixedMobCapacity", infoData).orElse(500))
             .setRecovery(getRecovery(infoData))
             .setBackgroundTypes(getBackgroundTypes(mapData))
-            .setReactors(getReactors(mapData));
+            .setReactors(getReactors(mapData))
+            .setLife(getLife(mapId, mapData));
 
       //TODO player npcs
       //      if (event == null) {
@@ -202,24 +159,80 @@ public class MapProcessor {
       return mapBuilder.build();
    }
 
-   protected List<Reactor> getReactors(MapleData mapData) {
-      return mapData.childByPath("reactor")
+   protected static List<Life> getLife(int mapId, MapleData mapData) {
+      return mapData.childByPath("life")
             .map(MapleData::children)
             .orElse(Collections.emptyList())
             .stream()
-            .map(this::getReactor)
+            .map(data -> produceLife(mapId, data))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(Collectors.toList());
    }
 
-   protected Optional<Reactor> getReactor(MapleData reactorData) {
+   protected static Optional<Life> produceLife(int mapId, MapleData data) {
+      String id = data.childByPath("id")
+            .flatMap(MapleDataTool::getString)
+            .orElseThrow();
+      String type = data.childByPath("type")
+            .flatMap(MapleDataTool::getString)
+            .orElseThrow();
+      int team = MapleDataTool.getInteger("team", data).orElse(-1);
+      //      if (map.isCPQMap2() && type.equals("m")) {
+      //         if ((Integer.parseInt(life.getName()) % 2) == 0) {
+      //            team = 0;
+      //         } else {
+      //            team = 1;
+      //         }
+      //      }
+      int cy = data.childByPath("cy")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      int f = data.childByPath("f")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      int fh = data.childByPath("fh")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      int rx0 = data.childByPath("rx0")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      int rx1 = data.childByPath("rx1")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      int x = data.childByPath("x")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      int y = data.childByPath("y")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      int hide = data.childByPath("hide")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      int mobTime = data.childByPath("mobTime")
+            .flatMap(MapleDataTool::getInteger)
+            .orElse(0);
+      return LifeFactory.createLife(Integer.parseInt(id), type, team, cy, f, fh, rx0, rx1, x, y, hide, mobTime);
+   }
+
+   protected static List<Reactor> getReactors(MapleData mapData) {
+      return mapData.childByPath("reactor")
+            .map(MapleData::children)
+            .orElse(Collections.emptyList())
+            .stream()
+            .map(MapProcessor::getReactor)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toList());
+   }
+
+   protected static Optional<Reactor> getReactor(MapleData reactorData) {
       return reactorData.childByPath("id")
             .flatMap(MapleDataTool::getString)
             .map(id -> getReactor(id, reactorData));
    }
 
-   protected Reactor getReactor(String id, MapleData data) {
+   protected static Reactor getReactor(String id, MapleData data) {
       int x = data.childByPath("x")
             .flatMap(MapleDataTool::getInteger)
             .orElse(0);
@@ -239,16 +252,16 @@ public class MapProcessor {
       return new Reactor(id, name, x, y, reactorTime * 1000, facingDirection);
    }
 
-   protected List<BackgroundType> getBackgroundTypes(MapleData mapData) {
+   protected static List<BackgroundType> getBackgroundTypes(MapleData mapData) {
       return mapData.childByPath("back")
             .map(MapleData::children)
             .orElse(Collections.emptyList())
             .stream()
-            .map(this::getBackgroundType)
+            .map(MapProcessor::getBackgroundType)
             .collect(Collectors.toList());
    }
 
-   protected BackgroundType getBackgroundType(MapleData layer) {
+   protected static BackgroundType getBackgroundType(MapleData layer) {
       int layerNum = Integer.parseInt(layer.name());
       int type = layer.childByPath("type")
             .flatMap(MapleDataTool::getInteger)
@@ -256,25 +269,29 @@ public class MapProcessor {
       return new BackgroundType(layerNum, type);
    }
 
-   protected float getRecovery(MapleData infoData) {
+   protected static float getRecovery(MapleData infoData) {
       return infoData.childByPath("recovery")
             .flatMap(MapleDataTool::getFloat)
             .orElse(1.0f);
    }
 
-   protected String loadStreetName(int mapId) {
-      return nameData.childByPath(getMapStringName(mapId))
+   protected static String loadStreetName(int mapId) {
+      return DataRegistry.getInstance()
+            .getMapNameData()
+            .childByPath(getMapStringName(mapId))
             .flatMap(data -> MapleDataTool.getString("streetName", data))
             .orElse("");
    }
 
-   protected String loadPlaceName(int mapId) {
-      return nameData.childByPath(getMapStringName(mapId))
+   protected static String loadPlaceName(int mapId) {
+      return DataRegistry.getInstance()
+            .getMapNameData()
+            .childByPath(getMapStringName(mapId))
             .flatMap(data -> MapleDataTool.getString("mapName", data))
             .orElse("");
    }
 
-   protected String getMapStringName(int mapId) {
+   protected static String getMapStringName(int mapId) {
       StringBuilder builder = new StringBuilder();
       if (mapId < 100000000) {
          builder.append("maple");
@@ -313,22 +330,22 @@ public class MapProcessor {
       return builder.toString();
    }
 
-   protected int getSeats(MapleData data) {
+   protected static int getSeats(MapleData data) {
       return data.childByPath("seat")
             .map(MapleData::children)
             .map(List::size)
             .orElse(0);
    }
 
-   protected List<Rectangle> getAreas(MapleData data) {
+   protected static List<Rectangle> getAreas(MapleData data) {
       return data.childByPath("area")
             .map(MapleData::children)
             .orElse(Collections.emptyList()).stream()
-            .map(this::getRectangle)
+            .map(MapProcessor::getRectangle)
             .collect(Collectors.toList());
    }
 
-   private Rectangle getRectangle(MapleData data) {
+   protected static Rectangle getRectangle(MapleData data) {
       int x1 = getX1(data);
       int y1 = getY1(data);
       int x2 = getX2(data);
@@ -336,31 +353,31 @@ public class MapProcessor {
       return new Rectangle(x1, y1, (x2 - x1), (y2 - y1));
    }
 
-   private Integer getY2(MapleData data) {
+   protected static Integer getY2(MapleData data) {
       return data.childByPath("y2")
             .flatMap(MapleDataTool::getInteger)
             .orElse(0);
    }
 
-   private Integer getX2(MapleData data) {
+   protected static Integer getX2(MapleData data) {
       return data.childByPath("x2")
             .flatMap(MapleDataTool::getInteger)
             .orElse(0);
    }
 
-   private Integer getY1(MapleData data) {
+   protected static Integer getY1(MapleData data) {
       return data.childByPath("y1")
             .flatMap(MapleDataTool::getInteger)
             .orElse(0);
    }
 
-   private Integer getX1(MapleData data) {
+   protected static Integer getX1(MapleData data) {
       return data.childByPath("x1")
             .flatMap(MapleDataTool::getInteger)
             .orElse(0);
    }
 
-   protected FootholdTree getFootholdTree(MapleData mapData) {
+   protected static FootholdTree getFootholdTree(MapleData mapData) {
 
       List<Foothold> allFootholds = new LinkedList<>();
       Point lBound = new Point();
@@ -398,7 +415,7 @@ public class MapProcessor {
             .build();
    }
 
-   protected Rectangle getMapArea(MapleData mapData, MapleData infoData) {
+   protected static Rectangle getMapArea(MapleData mapData, MapleData infoData) {
       Rectangle mapArea = new Rectangle();
       int[] bounds = new int[4];
       bounds[0] = infoData.childByPath("VRTop")
@@ -413,11 +430,11 @@ public class MapProcessor {
          if (miniMap.isPresent()) {
             bounds[0] = miniMap.flatMap(data -> data.childByPath("centerX"))
                   .flatMap(MapleDataTool::getInteger)
-                  .map(this::invertInteger)
+                  .map(MapProcessor::invertInteger)
                   .orElse(0);
             bounds[1] = miniMap.flatMap(data -> data.childByPath("centerY"))
                   .flatMap(MapleDataTool::getInteger)
-                  .map(this::invertInteger)
+                  .map(MapProcessor::invertInteger)
                   .orElse(0);
             bounds[2] = miniMap.flatMap(data -> data.childByPath("height"))
                   .flatMap(MapleDataTool::getInteger)
@@ -442,16 +459,16 @@ public class MapProcessor {
       return mapArea;
    }
 
-   private int invertInteger(Integer value) {
+   protected static int invertInteger(Integer value) {
       return value * -1;
    }
 
-   protected Optional<TimeMob> getTimeMob(MapleData infoData) {
+   protected static Optional<TimeMob> getTimeMob(MapleData infoData) {
       return infoData.childByPath("timeMob")
-            .map(this::getTimeMobInternal);
+            .map(MapProcessor::getTimeMobInternal);
    }
 
-   protected TimeMob getTimeMobInternal(MapleData data) {
+   protected static TimeMob getTimeMobInternal(MapleData data) {
       int id = data.childByPath("id")
             .flatMap(MapleDataTool::getInteger)
             .orElse(0);
@@ -461,7 +478,7 @@ public class MapProcessor {
       return new TimeMob(id, message);
    }
 
-   protected List<PortalData> getPortals(MapleData mapData) {
+   protected static List<PortalData> getPortals(MapleData mapData) {
       return mapData.childByPath("portal")
             .map(MapleData::children)
             .orElse(Collections.emptyList())
@@ -474,21 +491,21 @@ public class MapProcessor {
             .collect(Collectors.toList());
    }
 
-   protected String getOnUserEnter(int mapId, MapleData infoData) {
+   protected static String getOnUserEnter(int mapId, MapleData infoData) {
       return infoData.childByPath("onUserEnter")
             .flatMap(MapleDataTool::getString)
             .filter(result -> !result.equals(""))
             .orElse(String.valueOf(mapId));
    }
 
-   protected String getOnFirstUserEnter(int mapId, MapleData infoData) {
+   protected static String getOnFirstUserEnter(int mapId, MapleData infoData) {
       return infoData.childByPath("onFirstUserEnter")
             .flatMap(MapleDataTool::getString)
             .filter(result -> !result.equals(""))
             .orElse(String.valueOf(mapId));
    }
 
-   protected float getMonsterRate(MapleData infoData) {
+   protected static float getMonsterRate(MapleData infoData) {
       return infoData.childByPath("mobRate")
             .flatMap(MapleDataTool::getFloat)
             .orElse(0f);

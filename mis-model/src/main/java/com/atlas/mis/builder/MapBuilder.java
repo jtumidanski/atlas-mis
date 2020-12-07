@@ -3,12 +3,16 @@ package com.atlas.mis.builder;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.app.common.builder.RecordBuilder;
 import com.atlas.mis.model.BackgroundType;
 import com.atlas.mis.model.Foothold;
 import com.atlas.mis.model.FootholdTree;
+import com.atlas.mis.model.Life;
 import com.atlas.mis.model.MapData;
+import com.atlas.mis.model.Monster;
+import com.atlas.mis.model.Npc;
 import com.atlas.mis.model.PortalData;
 import com.atlas.mis.model.Reactor;
 import com.atlas.mis.model.TimeMob;
@@ -71,6 +75,8 @@ public class MapBuilder extends RecordBuilder<MapData, MapBuilder> {
 
    private List<Reactor> reactors;
 
+   private List<Life> life;
+
    public MapBuilder(int id) {
       this.id = id;
    }
@@ -83,9 +89,19 @@ public class MapBuilder extends RecordBuilder<MapData, MapBuilder> {
    @Override
    public MapData construct() {
       XLimit xLimit = createXLimit();
+
+      List<Npc> npcs = life.stream()
+            .filter(l -> l instanceof Npc)
+            .map(l -> (Npc) l)
+            .collect(Collectors.toList());
+      List<Monster> monsters = life.stream()
+            .filter(l -> l instanceof Monster)
+            .map(l -> (Monster) l)
+            .collect(Collectors.toList());
+
       return new MapData(id, name, streetName, returnMapId, monsterRate, onFirstUserEnter, onUserEnter, fieldLimit, mobInterval,
             portals, timeMob, mapArea, footholdTree, areas, seats, clock, everLast, town, decHP, protectItem, forcedReturnMap,
-            boat, timeLimit, fieldType, mobCapacity, recovery, backgroundTypes, xLimit, reactors);
+            boat, timeLimit, fieldType, mobCapacity, recovery, backgroundTypes, xLimit, reactors, npcs, monsters);
    }
 
    public MapBuilder setName(String name) {
@@ -220,6 +236,11 @@ public class MapBuilder extends RecordBuilder<MapData, MapBuilder> {
 
    public MapBuilder setReactors(List<Reactor> reactors) {
       this.reactors = reactors;
+      return getThis();
+   }
+
+   public MapBuilder setLife(List<Life> life) {
+      this.life = life;
       return getThis();
    }
 
