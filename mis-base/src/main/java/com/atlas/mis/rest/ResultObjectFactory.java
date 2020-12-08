@@ -107,6 +107,7 @@ public final class ResultObjectFactory {
                   .setRx1(npc.rx1())
                   .setX(npc.x())
                   .setY(npc.y())
+                  .setHide(npc.hide())
             );
    }
 }
