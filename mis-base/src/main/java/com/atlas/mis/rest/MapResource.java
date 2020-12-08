@@ -56,4 +56,12 @@ public class MapResource {
    public Response getMapNpcs(@PathParam("mapId") Integer mapId) {
       return RequestResultProcessor.getMapNpcs(mapId).build();
    }
+
+   @GET
+   @Path("/{mapId}/monsters")
+   @Consumes(MediaType.APPLICATION_JSON)
+   @Produces(MediaType.APPLICATION_JSON)
+   public Response getMapMonsters(@PathParam("mapId") Integer mapId) {
+      return RequestResultProcessor.getMapMonsters(mapId).build();
+   }
 }

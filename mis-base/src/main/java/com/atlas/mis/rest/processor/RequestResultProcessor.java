@@ -72,4 +72,13 @@ public final class RequestResultProcessor {
             .map(ResultObjectFactory::createNpc)
             .collect(Collectors.toResultBuilder());
    }
+
+   public static ResultBuilder getMapMonsters(int mapId) {
+      return MapDataRegistry.getInstance().getMapData(mapId)
+            .map(MapData::monsters)
+            .orElse(Collections.emptyList())
+            .stream()
+            .map(ResultObjectFactory::createMonster)
+            .collect(Collectors.toResultBuilder());
+   }
 }

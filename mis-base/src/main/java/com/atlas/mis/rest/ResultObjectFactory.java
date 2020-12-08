@@ -6,16 +6,19 @@ import java.util.stream.Collectors;
 
 import com.atlas.mis.attribute.BackgroundTypeAttributes;
 import com.atlas.mis.attribute.MapAttributes;
+import com.atlas.mis.attribute.MonsterAttributes;
 import com.atlas.mis.attribute.NpcAttributes;
 import com.atlas.mis.attribute.PortalAttributes;
 import com.atlas.mis.attribute.ReactorAttributes;
 import com.atlas.mis.attribute.RectangleAttributes;
 import com.atlas.mis.builder.MapAttributesBuilder;
+import com.atlas.mis.builder.MonsterAttributesBuilder;
 import com.atlas.mis.builder.NpcAttributesBuilder;
 import com.atlas.mis.builder.PortalAttributesBuilder;
 import com.atlas.mis.builder.ReactorAttributesBuilder;
 import com.atlas.mis.model.BackgroundType;
 import com.atlas.mis.model.MapData;
+import com.atlas.mis.model.Monster;
 import com.atlas.mis.model.Npc;
 import com.atlas.mis.model.PortalData;
 import com.atlas.mis.model.Reactor;
@@ -108,6 +111,23 @@ public final class ResultObjectFactory {
                   .setX(npc.x())
                   .setY(npc.y())
                   .setHide(npc.hide())
+            );
+   }
+
+   public static ResultObjectBuilder createMonster(Monster monster) {
+      return new ResultObjectBuilder(MonsterAttributes.class, monster.objectId())
+            .setAttribute(new MonsterAttributesBuilder()
+                  .setMonsterId(monster.id())
+                  .setMobTime(monster.mobTime())
+                  .setTeam(monster.team())
+                  .setCy(monster.cy())
+                  .setF(monster.f())
+                  .setFh(monster.fh())
+                  .setRx0(monster.rx0())
+                  .setRx1(monster.rx1())
+                  .setX(monster.x())
+                  .setY(monster.y())
+                  .setHide(monster.hide())
             );
    }
 }
