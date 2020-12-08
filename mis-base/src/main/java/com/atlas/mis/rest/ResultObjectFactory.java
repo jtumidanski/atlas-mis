@@ -6,14 +6,17 @@ import java.util.stream.Collectors;
 
 import com.atlas.mis.attribute.BackgroundTypeAttributes;
 import com.atlas.mis.attribute.MapAttributes;
+import com.atlas.mis.attribute.NpcAttributes;
 import com.atlas.mis.attribute.PortalAttributes;
 import com.atlas.mis.attribute.ReactorAttributes;
 import com.atlas.mis.attribute.RectangleAttributes;
 import com.atlas.mis.builder.MapAttributesBuilder;
+import com.atlas.mis.builder.NpcAttributesBuilder;
 import com.atlas.mis.builder.PortalAttributesBuilder;
 import com.atlas.mis.builder.ReactorAttributesBuilder;
 import com.atlas.mis.model.BackgroundType;
 import com.atlas.mis.model.MapData;
+import com.atlas.mis.model.Npc;
 import com.atlas.mis.model.PortalData;
 import com.atlas.mis.model.Reactor;
 
@@ -89,6 +92,21 @@ public final class ResultObjectFactory {
                   .setY(reactor.y())
                   .setDelay(reactor.delay())
                   .setFacingDirection(reactor.facingDirection())
+            );
+   }
+
+   public static ResultObjectBuilder createNpc(Npc npc) {
+      return new ResultObjectBuilder(NpcAttributes.class, npc.objectId())
+            .setAttribute(new NpcAttributesBuilder()
+                  .setId(npc.id())
+                  .setName(npc.name())
+                  .setCy(npc.cy())
+                  .setF(npc.f())
+                  .setFh(npc.fh())
+                  .setRx0(npc.rx0())
+                  .setRx1(npc.rx1())
+                  .setX(npc.x())
+                  .setY(npc.y())
             );
    }
 }

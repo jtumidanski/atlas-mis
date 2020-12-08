@@ -48,4 +48,12 @@ public class MapResource {
    public Response getMapReactors(@PathParam("mapId") Integer mapId) {
       return RequestResultProcessor.getMapReactors(mapId).build();
    }
+
+   @GET
+   @Path("/{mapId}/npcs")
+   @Consumes(MediaType.APPLICATION_JSON)
+   @Produces(MediaType.APPLICATION_JSON)
+   public Response getMapNpcs(@PathParam("mapId") Integer mapId) {
+      return RequestResultProcessor.getMapNpcs(mapId).build();
+   }
 }

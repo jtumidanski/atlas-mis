@@ -14,13 +14,13 @@ public final class LifeFactory {
    private LifeFactory() {
    }
 
-   public static Optional<Life> createLife(int id, String type, int team, int cy, int f, int fh, int rx0, int rx1, int x, int y,
-                                           int hide, int mobTime) {
+   public static Optional<Life> createLife(int objectId, int id, String type, int team, int cy, int f, int fh, int rx0, int rx1,
+                                           int x, int y, int hide, int mobTime) {
       LifeBuilder<? extends Life, ?> lifeBuilder;
       if (type.equalsIgnoreCase("n")) {
-         lifeBuilder = createNpcLife(id);
+         lifeBuilder = createNpcLife(objectId, id);
       } else if (type.equalsIgnoreCase("m")) {
-         lifeBuilder = createMonsterLife(id, mobTime, team);
+         lifeBuilder = createMonsterLife(objectId, id, mobTime, team);
       } else {
          System.out.println("Unknown life type " + type);
          return Optional.empty();
@@ -36,14 +36,14 @@ public final class LifeFactory {
       return Optional.of(lifeBuilder.build());
    }
 
-   protected static NpcBuilder createNpcLife(int id) {
-      return new NpcBuilder(id)
+   protected static NpcBuilder createNpcLife(int objectId, int id) {
+      return new NpcBuilder(objectId, id)
             .setName(MapleDataTool.getString(id + "/name", DataRegistry.getInstance().getNpcNameData())
                   .orElse("MISSINGNO"));
    }
 
-   protected static MonsterBuilder createMonsterLife(int id, int mobTime, int team) {
-      return new MonsterBuilder(id)
+   protected static MonsterBuilder createMonsterLife(int objectId, int id, int mobTime, int team) {
+      return new MonsterBuilder(objectId, id)
             .setMobTime(mobTime)
             .setTeam(team);
    }

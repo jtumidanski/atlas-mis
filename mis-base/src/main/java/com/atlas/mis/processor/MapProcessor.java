@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.atlas.mis.DataRegistry;
@@ -160,17 +161,18 @@ public final class MapProcessor {
    }
 
    protected static List<Life> getLife(int mapId, MapleData mapData) {
+      AtomicInteger index = new AtomicInteger();
       return mapData.childByPath("life")
             .map(MapleData::children)
             .orElse(Collections.emptyList())
             .stream()
-            .map(data -> produceLife(mapId, data))
+            .map(data -> produceLife(index.incrementAndGet(), mapId, data))
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(Collectors.toList());
    }
 
-   protected static Optional<Life> produceLife(int mapId, MapleData data) {
+   protected static Optional<Life> produceLife(int objectId, int mapId, MapleData data) {
       String id = data.childByPath("id")
             .flatMap(MapleDataTool::getString)
             .orElseThrow();
@@ -212,7 +214,7 @@ public final class MapProcessor {
       int mobTime = data.childByPath("mobTime")
             .flatMap(MapleDataTool::getInteger)
             .orElse(0);
-      return LifeFactory.createLife(Integer.parseInt(id), type, team, cy, f, fh, rx0, rx1, x, y, hide, mobTime);
+      return LifeFactory.createLife(objectId, Integer.parseInt(id), type, team, cy, f, fh, rx0, rx1, x, y, hide, mobTime);
    }
 
    protected static List<Reactor> getReactors(MapleData mapData) {

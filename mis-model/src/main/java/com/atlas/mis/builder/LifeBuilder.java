@@ -3,6 +3,8 @@ package com.atlas.mis.builder;
 import java.awt.*;
 
 public abstract class LifeBuilder<T, U extends LifeBuilder<T, U>> {
+   protected int id;
+
    protected int lifeId;
 
    protected int cy;
@@ -19,7 +21,8 @@ public abstract class LifeBuilder<T, U extends LifeBuilder<T, U>> {
 
    protected boolean hide;
 
-   public LifeBuilder(int lifeId) {
+   public LifeBuilder(int id, int lifeId) {
+      this.id = id;
       this.lifeId = lifeId;
    }
 

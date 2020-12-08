@@ -63,4 +63,13 @@ public final class RequestResultProcessor {
             .map(Mappers::singleOkResult)
             .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
    }
+
+   public static ResultBuilder getMapNpcs(int mapId) {
+      return MapDataRegistry.getInstance().getMapData(mapId)
+            .map(MapData::npcs)
+            .orElse(Collections.emptyList())
+            .stream()
+            .map(ResultObjectFactory::createNpc)
+            .collect(Collectors.toResultBuilder());
+   }
 }

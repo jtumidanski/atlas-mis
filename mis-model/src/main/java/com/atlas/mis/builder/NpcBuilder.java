@@ -6,8 +6,8 @@ import com.atlas.mis.model.Npc;
 public class NpcBuilder extends LifeBuilder<Life, NpcBuilder> {
    private String name;
 
-   public NpcBuilder(int lifeId) {
-      super(lifeId);
+   public NpcBuilder(int id, int lifeId) {
+      super(id, lifeId);
    }
 
    public NpcBuilder setName(String name) {
@@ -22,6 +22,6 @@ public class NpcBuilder extends LifeBuilder<Life, NpcBuilder> {
 
    @Override
    public Life build() {
-      return new Npc(lifeId, name, cy, f, fh, rx0, rx1, position.x, position.y, hide);
+      return new Npc(id, lifeId, name, cy, f, fh, rx0, rx1, position.x, position.y, hide);
    }
 }

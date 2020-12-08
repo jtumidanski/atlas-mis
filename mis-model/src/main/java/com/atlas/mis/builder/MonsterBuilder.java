@@ -8,8 +8,8 @@ public class MonsterBuilder extends LifeBuilder<Life, MonsterBuilder> {
 
    private int team;
 
-   public MonsterBuilder(int lifeId) {
-      super(lifeId);
+   public MonsterBuilder(int id, int lifeId) {
+      super(id, lifeId);
    }
 
    public MonsterBuilder setMobTime(int mobTime) {
@@ -29,6 +29,6 @@ public class MonsterBuilder extends LifeBuilder<Life, MonsterBuilder> {
 
    @Override
    public Life build() {
-      return new Monster(lifeId, mobTime, team, cy, f, fh, rx0, rx1, position.x, position.y, hide);
+      return new Monster(id, lifeId, mobTime, team, cy, f, fh, rx0, rx1, position.x, position.y, hide);
    }
 }
