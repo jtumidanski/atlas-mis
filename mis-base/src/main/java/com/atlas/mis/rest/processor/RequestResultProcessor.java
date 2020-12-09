@@ -6,6 +6,7 @@ import javax.ws.rs.core.Response;
 import com.app.rest.util.stream.Collectors;
 import com.app.rest.util.stream.Mappers;
 import com.atlas.mis.MapDataRegistry;
+import com.atlas.mis.MonsterDataRegistry;
 import com.atlas.mis.model.MapData;
 import com.atlas.mis.rest.ResultObjectFactory;
 
@@ -80,5 +81,12 @@ public final class RequestResultProcessor {
             .stream()
             .map(ResultObjectFactory::createMonster)
             .collect(Collectors.toResultBuilder());
+   }
+
+   public static ResultBuilder getMonster(int monsterId) {
+      return MonsterDataRegistry.getInstance().getMonsterData(monsterId)
+            .map(data -> ResultObjectFactory.createMonsterData(monsterId, data))
+            .map(Mappers::singleOkResult)
+            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
    }
 }

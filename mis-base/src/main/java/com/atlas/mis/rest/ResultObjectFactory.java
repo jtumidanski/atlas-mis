@@ -7,18 +7,21 @@ import java.util.stream.Collectors;
 import com.atlas.mis.attribute.BackgroundTypeAttributes;
 import com.atlas.mis.attribute.MapAttributes;
 import com.atlas.mis.attribute.MonsterAttributes;
+import com.atlas.mis.attribute.MonsterDataAttributes;
 import com.atlas.mis.attribute.NpcAttributes;
 import com.atlas.mis.attribute.PortalAttributes;
 import com.atlas.mis.attribute.ReactorAttributes;
 import com.atlas.mis.attribute.RectangleAttributes;
 import com.atlas.mis.builder.MapAttributesBuilder;
 import com.atlas.mis.builder.MonsterAttributesBuilder;
+import com.atlas.mis.builder.MonsterDataAttributesBuilder;
 import com.atlas.mis.builder.NpcAttributesBuilder;
 import com.atlas.mis.builder.PortalAttributesBuilder;
 import com.atlas.mis.builder.ReactorAttributesBuilder;
 import com.atlas.mis.model.BackgroundType;
 import com.atlas.mis.model.MapData;
 import com.atlas.mis.model.Monster;
+import com.atlas.mis.model.MonsterData;
 import com.atlas.mis.model.Npc;
 import com.atlas.mis.model.PortalData;
 import com.atlas.mis.model.Reactor;
@@ -128,6 +131,35 @@ public final class ResultObjectFactory {
                   .setX(monster.x())
                   .setY(monster.y())
                   .setHide(monster.hide())
+            );
+   }
+
+   public static ResultObjectBuilder createMonsterData(int monsterId, MonsterData monsterData) {
+      return new ResultObjectBuilder(MonsterDataAttributes.class, monsterId)
+            .setAttribute(new MonsterDataAttributesBuilder()
+                  .setName(monsterData.name())
+                  .setHp(monsterData.hp())
+                  .setMp(monsterData.mp())
+                  .setExperience(monsterData.exp())
+                  .setLevel(monsterData.level())
+                  .setPaDamage(monsterData.paDamage())
+                  .setPdDamage(monsterData.pdDamage())
+                  .setMaDamage(monsterData.maDamage())
+                  .setMdDamage(monsterData.mdDamage())
+                  .setFriendly(monsterData.isFriendly())
+                  .setRemoveAfter(monsterData.removeAfter())
+                  .setBoss(monsterData.isBoss())
+                  .setExplosiveReward(monsterData.isExplosiveReward())
+                  .setFfaLoot(monsterData.isFFALoot())
+                  .setUndead(monsterData.isUndead())
+                  .setBuffToGive(monsterData.buffToGive())
+                  .setCarnivalPoint(monsterData.cp())
+                  .setRemoveOnMiss(monsterData.removeOnMiss())
+                  .setChangeable(monsterData.changeable())
+                  .setTagColor(monsterData.tagColor())
+                  .setTagBackgroundColor(monsterData.tagBackgroundColor())
+                  .setFixedStance(monsterData.fixedStance())
+                  .setFirstAttack(monsterData.firstAttack())
             );
    }
 }
