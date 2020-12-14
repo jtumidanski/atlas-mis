@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import com.app.common.builder.RecordBuilder;
 import com.atlas.mis.model.BackgroundType;
-import com.atlas.mis.model.Foothold;
 import com.atlas.mis.model.FootholdTree;
 import com.atlas.mis.model.Life;
 import com.atlas.mis.model.MapData;
@@ -17,6 +16,7 @@ import com.atlas.mis.model.PortalData;
 import com.atlas.mis.model.Reactor;
 import com.atlas.mis.model.TimeMob;
 import com.atlas.mis.model.XLimit;
+import com.atlas.mis.processor.MapProcessor;
 
 public class MapBuilder extends RecordBuilder<MapData, MapBuilder> {
    private final int id;
@@ -249,51 +249,8 @@ public class MapBuilder extends RecordBuilder<MapData, MapBuilder> {
       Point rp = new Point(mapArea.x + mapArea.width, mapArea.y);
       Point fallback = new Point(mapArea.x + (mapArea.width / 2), mapArea.y);
 
-      lp = bSearchDropPos(lp, fallback);  // approximated leftmost fh node position
-      rp = bSearchDropPos(rp, fallback);  // approximated rightmost fh node position
+      lp = MapProcessor.bSearchDropPos(footholdTree, lp, fallback);  // approximated leftmost fh node position
+      rp = MapProcessor.bSearchDropPos(footholdTree, rp, fallback);  // approximated rightmost fh node position
       return new XLimit(lp.x + 14, rp.x - 14);
-   }
-
-   protected Point bSearchDropPos(Point initial, Point fallback) {
-      Point res, dropPos = null;
-
-      int awayX = fallback.x;
-      int homeX = initial.x;
-
-      int y = initial.y - 85;
-
-      do {
-         int distanceX = awayX - homeX;
-         int dx = distanceX / 2;
-
-         int searchX = homeX + dx;
-         if ((res = calcPointBelow(new Point(searchX, y))) != null) {
-            awayX = searchX;
-            dropPos = res;
-         } else {
-            homeX = searchX;
-         }
-      } while (Math.abs(homeX - awayX) > 5);
-
-      return (dropPos != null) ? dropPos : fallback;
-   }
-
-   protected Point calcPointBelow(Point initial) {
-      Foothold fh = footholdTree.findBelow(initial);
-      if (fh == null) {
-         return null;
-      }
-      int dropY = fh.firstPoint().y;
-      if (!fh.isWall() && fh.firstPoint().y != fh.secondPoint().y) {
-         double s1 = Math.abs(fh.secondPoint().y - fh.firstPoint().y);
-         double s2 = Math.abs(fh.secondPoint().x - fh.firstPoint().x);
-         double s5 = Math.cos(Math.atan(s2 / s1)) * (Math.abs(initial.x - fh.firstPoint().x) / Math.cos(Math.atan(s1 / s2)));
-         if (fh.secondPoint().y < fh.firstPoint().y) {
-            dropY = fh.firstPoint().y - (int) s5;
-         } else {
-            dropY = fh.firstPoint().y + (int) s5;
-         }
-      }
-      return new Point(initial.x, dropY);
    }
 }

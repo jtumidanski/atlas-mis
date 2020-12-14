@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import com.atlas.mis.attribute.BackgroundTypeAttributes;
 import com.atlas.mis.attribute.MapAttributes;
+import com.atlas.mis.attribute.MapPointAttributes;
 import com.atlas.mis.attribute.MonsterAttributes;
 import com.atlas.mis.attribute.MonsterDataAttributes;
 import com.atlas.mis.attribute.NpcAttributes;
@@ -13,6 +14,7 @@ import com.atlas.mis.attribute.PortalAttributes;
 import com.atlas.mis.attribute.ReactorAttributes;
 import com.atlas.mis.attribute.RectangleAttributes;
 import com.atlas.mis.builder.MapAttributesBuilder;
+import com.atlas.mis.builder.MapPointAttributesBuilder;
 import com.atlas.mis.builder.MonsterAttributesBuilder;
 import com.atlas.mis.builder.MonsterDataAttributesBuilder;
 import com.atlas.mis.builder.NpcAttributesBuilder;
@@ -160,6 +162,14 @@ public final class ResultObjectFactory {
                   .setTagBackgroundColor(monsterData.tagBackgroundColor())
                   .setFixedStance(monsterData.fixedStance())
                   .setFirstAttack(monsterData.firstAttack())
+            );
+   }
+
+   public static ResultObjectBuilder createPoint(Point point) {
+      return new ResultObjectBuilder(MapPointAttributes.class, 0)
+            .setAttribute(new MapPointAttributesBuilder()
+                  .setX(point.x)
+                  .setY(point.y)
             );
    }
 }

@@ -1,5 +1,6 @@
 package com.atlas.mis.rest.processor;
 
+import java.awt.*;
 import java.util.Collections;
 import javax.ws.rs.core.Response;
 
@@ -8,6 +9,7 @@ import com.app.rest.util.stream.Mappers;
 import com.atlas.mis.MapDataRegistry;
 import com.atlas.mis.MonsterDataRegistry;
 import com.atlas.mis.model.MapData;
+import com.atlas.mis.processor.MapProcessor;
 import com.atlas.mis.rest.ResultObjectFactory;
 
 import builder.ResultBuilder;
@@ -87,6 +89,14 @@ public final class RequestResultProcessor {
       return MonsterDataRegistry.getInstance().getMonsterData(monsterId)
             .map(data -> ResultObjectFactory.createMonsterData(monsterId, data))
             .map(Mappers::singleOkResult)
+            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
+   }
+
+   public static ResultBuilder getMapDropPosition(int mapId, int initialX, int initialY, int fallbackX, int fallbackY) {
+      return MapDataRegistry.getInstance().getMapData(mapId)
+            .map(map -> MapProcessor.calcDropPos(map, new Point(initialX, initialY), new Point(fallbackX, fallbackY)))
+            .map(ResultObjectFactory::createPoint)
+            .map(Mappers::singleCreatedResult)
             .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
    }
 }

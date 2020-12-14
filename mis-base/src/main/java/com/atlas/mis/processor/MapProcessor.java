@@ -512,4 +512,66 @@ public final class MapProcessor {
             .flatMap(MapleDataTool::getFloat)
             .orElse(0f);
    }
+
+   public static Point bSearchDropPos(FootholdTree footholdTree, Point initial, Point fallback) {
+      Point res, dropPos = null;
+
+      int awayX = fallback.x;
+      int homeX = initial.x;
+
+      int y = initial.y - 85;
+
+      do {
+         int distanceX = awayX - homeX;
+         int dx = distanceX / 2;
+
+         int searchX = homeX + dx;
+         if ((res = calcPointBelow(footholdTree, new Point(searchX, y))) != null) {
+            awayX = searchX;
+            dropPos = res;
+         } else {
+            homeX = searchX;
+         }
+      } while (Math.abs(homeX - awayX) > 5);
+
+      return (dropPos != null) ? dropPos : fallback;
+   }
+
+   public static Point calcPointBelow(FootholdTree footholdTree, Point initial) {
+      Foothold fh = footholdTree.findBelow(initial);
+      if (fh == null) {
+         return null;
+      }
+      int dropY = fh.firstPoint().y;
+      if (!fh.isWall() && fh.firstPoint().y != fh.secondPoint().y) {
+         double s1 = Math.abs(fh.secondPoint().y - fh.firstPoint().y);
+         double s2 = Math.abs(fh.secondPoint().x - fh.firstPoint().x);
+         double s5 = Math.cos(Math.atan(s2 / s1)) * (Math.abs(initial.x - fh.firstPoint().x) / Math.cos(Math.atan(s1 / s2)));
+         if (fh.secondPoint().y < fh.firstPoint().y) {
+            dropY = fh.firstPoint().y - (int) s5;
+         } else {
+            dropY = fh.firstPoint().y + (int) s5;
+         }
+      }
+      return new Point(initial.x, dropY);
+   }
+
+   public static Point calcDropPos(MapData map, Point initial, Point fallback) {
+      if (initial.x < map.xLimit().min()) {
+         initial.x = map.xLimit().min();
+      } else if (initial.x > map.xLimit().max()) {
+         initial.x = map.xLimit().max();
+      }
+
+      Point ret = calcPointBelow(map.footholdTree(), new Point(initial.x, initial.y - 85));
+      if (ret == null) {
+         ret = bSearchDropPos(map.footholdTree(), initial, fallback);
+      }
+
+      if (!map.mapArea().contains(ret)) { // found drop pos outside the map :O
+         return fallback;
+      }
+
+      return ret;
+   }
 }

@@ -2,6 +2,7 @@ package com.atlas.mis.rest;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -9,7 +10,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.atlas.mis.attribute.DropPositionInputAttributes;
 import com.atlas.mis.rest.processor.RequestResultProcessor;
+
+import rest.InputBody;
 
 @Path("maps")
 public class MapResource {
@@ -63,5 +67,14 @@ public class MapResource {
    @Produces(MediaType.APPLICATION_JSON)
    public Response getMapMonsters(@PathParam("mapId") Integer mapId) {
       return RequestResultProcessor.getMapMonsters(mapId).build();
+   }
+
+   @POST
+   @Path("/{mapId}/dropPosition")
+   @Consumes(MediaType.APPLICATION_JSON)
+   @Produces(MediaType.APPLICATION_JSON)
+   public Response getMapDropPosition(@PathParam("mapId") Integer mapId, InputBody<DropPositionInputAttributes> inputBody) {
+      return RequestResultProcessor.getMapDropPosition(mapId, inputBody.attributes().initialX(),
+            inputBody.attributes().initialY(), inputBody.attributes().fallbackX(), inputBody.attributes().fallbackY()).build();
    }
 }
