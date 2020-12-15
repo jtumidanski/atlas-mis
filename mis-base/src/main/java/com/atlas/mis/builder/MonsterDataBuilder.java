@@ -53,7 +53,7 @@ public class MonsterDataBuilder {
 
    private CoolDamage cool;
 
-   private List<LoseItem> loseItemList;
+   private final List<LoseItem> loseItemList;
 
    private SelfDestruction selfDestruction;
 
@@ -61,7 +61,7 @@ public class MonsterDataBuilder {
 
    private int dropPeriod;
 
-   private Map<String, Integer> animationTime;
+   private final Map<String, Integer> animationTime;
 
    private byte tagColor;
 
@@ -75,7 +75,7 @@ public class MonsterDataBuilder {
 
    private int fixedStance;
 
-   private Map<Element, ElementalEffectiveness> resistance;
+   private final Map<Element, ElementalEffectiveness> resistance;
 
    private boolean changeable;
 
