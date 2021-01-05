@@ -2,7 +2,6 @@ package com.atlas.mis.rest.processor;
 
 import java.awt.*;
 import java.util.Collections;
-import javax.ws.rs.core.Response;
 
 import com.app.rest.util.stream.Collectors;
 import com.app.rest.util.stream.Mappers;
@@ -22,7 +21,7 @@ public final class RequestResultProcessor {
       return MapDataRegistry.getInstance().getMapData(mapId)
             .map(ResultObjectFactory::createMap)
             .map(Mappers::singleOkResult)
-            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
+            .orElseGet(ResultBuilder::notFound);
    }
 
    public static ResultBuilder getMapPortals(int mapId) {
@@ -52,7 +51,7 @@ public final class RequestResultProcessor {
             .findFirst()
             .map(ResultObjectFactory::createPortal)
             .map(Mappers::singleOkResult)
-            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
+            .orElseGet(ResultBuilder::notFound);
    }
 
    public static ResultBuilder getMapPortalById(int mapId, int portalId) {
@@ -64,7 +63,7 @@ public final class RequestResultProcessor {
             .findFirst()
             .map(ResultObjectFactory::createPortal)
             .map(Mappers::singleOkResult)
-            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
+            .orElseGet(ResultBuilder::notFound);
    }
 
    public static ResultBuilder getMapNpcs(int mapId) {
@@ -89,7 +88,7 @@ public final class RequestResultProcessor {
       return MonsterDataRegistry.getInstance().getMonsterData(monsterId)
             .map(data -> ResultObjectFactory.createMonsterData(monsterId, data))
             .map(Mappers::singleOkResult)
-            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
+            .orElseGet(ResultBuilder::notFound);
    }
 
    public static ResultBuilder getMapDropPosition(int mapId, int initialX, int initialY, int fallbackX, int fallbackY) {
@@ -97,6 +96,18 @@ public final class RequestResultProcessor {
             .map(map -> MapProcessor.calcDropPos(map, new Point(initialX, initialY), new Point(fallbackX, fallbackY)))
             .map(ResultObjectFactory::createPoint)
             .map(Mappers::singleCreatedResult)
-            .orElse(new ResultBuilder(Response.Status.NOT_FOUND));
+            .orElseGet(ResultBuilder::notFound);
+   }
+
+   public static ResultBuilder getMapNpc(int mapId, int npcId) {
+      return MapDataRegistry.getInstance().getMapData(mapId)
+            .map(MapData::npcs)
+            .orElse(Collections.emptyList())
+            .stream()
+            .filter(npc -> npc.id() == npcId)
+            .findFirst()
+            .map(ResultObjectFactory::createNpc)
+            .map(Mappers::singleOkResult)
+            .orElseGet(ResultBuilder::notFound);
    }
 }
