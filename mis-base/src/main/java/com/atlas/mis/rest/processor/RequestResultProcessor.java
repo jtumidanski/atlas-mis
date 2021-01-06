@@ -75,6 +75,16 @@ public final class RequestResultProcessor {
             .collect(Collectors.toResultBuilder());
    }
 
+   public static ResultBuilder getMapNpcs(int mapId, int objectId) {
+      return MapDataRegistry.getInstance().getMapData(mapId)
+            .map(MapData::npcs)
+            .orElse(Collections.emptyList())
+            .stream()
+            .filter(npc -> npc.objectId() == objectId)
+            .map(ResultObjectFactory::createNpc)
+            .collect(Collectors.toResultBuilder());
+   }
+
    public static ResultBuilder getMapMonsters(int mapId) {
       return MapDataRegistry.getInstance().getMapData(mapId)
             .map(MapData::monsters)

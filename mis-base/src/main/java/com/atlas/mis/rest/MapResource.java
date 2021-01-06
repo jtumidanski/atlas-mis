@@ -57,7 +57,10 @@ public class MapResource {
    @Path("/{mapId}/npcs")
    @Consumes(MediaType.APPLICATION_JSON)
    @Produces(MediaType.APPLICATION_JSON)
-   public Response getMapNpcs(@PathParam("mapId") Integer mapId) {
+   public Response getMapNpcs(@PathParam("mapId") Integer mapId, @QueryParam("objectId") Integer objectId) {
+      if (objectId != null) {
+         return RequestResultProcessor.getMapNpcs(mapId, objectId).build();
+      }
       return RequestResultProcessor.getMapNpcs(mapId).build();
    }
 
@@ -65,7 +68,7 @@ public class MapResource {
    @Path("/{mapId}/npcs/{npcId}")
    @Consumes(MediaType.APPLICATION_JSON)
    @Produces(MediaType.APPLICATION_JSON)
-   public Response getMapNpcs(@PathParam("mapId") Integer mapId, @PathParam("npcId") Integer npcId) {
+   public Response getMapNpc(@PathParam("mapId") Integer mapId, @PathParam("npcId") Integer npcId) {
       return RequestResultProcessor.getMapNpc(mapId, npcId).build();
    }
 
