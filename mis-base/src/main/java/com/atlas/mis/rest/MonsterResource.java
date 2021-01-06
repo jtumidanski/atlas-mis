@@ -19,4 +19,12 @@ public class MonsterResource {
    public Response getMonster(@PathParam("monsterId") Integer monsterId) {
       return RequestResultProcessor.getMonster(monsterId).build();
    }
+
+   @GET
+   @Path("/{monsterId}/loseItems")
+   @Consumes(MediaType.APPLICATION_JSON)
+   @Produces(MediaType.APPLICATION_JSON)
+   public Response getMonsterLoseItems(@PathParam("monsterId") Integer monsterId) {
+      return RequestResultProcessor.getMonsterLoseItems(monsterId).build();
+   }
 }

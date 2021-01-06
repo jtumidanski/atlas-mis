@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.atlas.mis.attribute.BackgroundTypeAttributes;
+import com.atlas.mis.attribute.LoseItemAttributes;
 import com.atlas.mis.attribute.MapAttributes;
 import com.atlas.mis.attribute.MapPointAttributes;
 import com.atlas.mis.attribute.MonsterAttributes;
@@ -13,6 +14,7 @@ import com.atlas.mis.attribute.NpcAttributes;
 import com.atlas.mis.attribute.PortalAttributes;
 import com.atlas.mis.attribute.ReactorAttributes;
 import com.atlas.mis.attribute.RectangleAttributes;
+import com.atlas.mis.builder.LoseItemAttributesBuilder;
 import com.atlas.mis.builder.MapAttributesBuilder;
 import com.atlas.mis.builder.MapPointAttributesBuilder;
 import com.atlas.mis.builder.MonsterAttributesBuilder;
@@ -21,6 +23,7 @@ import com.atlas.mis.builder.NpcAttributesBuilder;
 import com.atlas.mis.builder.PortalAttributesBuilder;
 import com.atlas.mis.builder.ReactorAttributesBuilder;
 import com.atlas.mis.model.BackgroundType;
+import com.atlas.mis.model.LoseItem;
 import com.atlas.mis.model.MapData;
 import com.atlas.mis.model.Monster;
 import com.atlas.mis.model.MonsterData;
@@ -170,6 +173,14 @@ public final class ResultObjectFactory {
             .setAttribute(new MapPointAttributesBuilder()
                   .setX(point.x)
                   .setY(point.y)
+            );
+   }
+
+   public static ResultObjectBuilder createLoseItem(LoseItem data) {
+      return new ResultObjectBuilder(LoseItemAttributes.class, data.id())
+            .setAttribute(new LoseItemAttributesBuilder()
+                  .setChance(data.chance())
+                  .setX(data.x())
             );
    }
 }

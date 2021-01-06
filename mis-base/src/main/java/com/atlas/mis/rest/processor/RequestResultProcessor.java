@@ -8,6 +8,7 @@ import com.app.rest.util.stream.Mappers;
 import com.atlas.mis.MapDataRegistry;
 import com.atlas.mis.MonsterDataRegistry;
 import com.atlas.mis.model.MapData;
+import com.atlas.mis.model.MonsterData;
 import com.atlas.mis.processor.MapProcessor;
 import com.atlas.mis.rest.ResultObjectFactory;
 
@@ -119,5 +120,14 @@ public final class RequestResultProcessor {
             .map(ResultObjectFactory::createNpc)
             .map(Mappers::singleOkResult)
             .orElseGet(ResultBuilder::notFound);
+   }
+
+   public static ResultBuilder getMonsterLoseItems(int monsterId) {
+      return MonsterDataRegistry.getInstance().getMonsterData(monsterId)
+            .map(MonsterData::loseItemList)
+            .orElseGet(Collections::emptyList)
+            .stream()
+            .map(ResultObjectFactory::createLoseItem)
+            .collect(Collectors.toResultBuilder());
    }
 }
