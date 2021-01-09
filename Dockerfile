@@ -13,7 +13,7 @@ COPY mis-api/src mis-api/src
 COPY mis-model/src mis-model/src
 COPY mis-base/src mis-base/src
 
-RUN mvn install
+RUN mvn install -Prunnable
 
 FROM openjdk:14-ea-jdk-alpine
 USER root
