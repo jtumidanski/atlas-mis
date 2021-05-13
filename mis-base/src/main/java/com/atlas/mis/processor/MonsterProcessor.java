@@ -90,7 +90,7 @@ public final class MonsterProcessor {
             .filter(data -> !data.name().equals("info"))
             .forEach(data -> {
                      int delay = data.children().stream()
-                           .mapToInt(pic -> MapleDataTool.getInteger("delay", pic).orElse(0))
+                           .mapToInt(pic -> MapleDataTool.getIntConvert("delay", pic).orElse(0))
                            .sum();
                      builder.setAnimationTime(data.name(), delay);
                   }
