@@ -33,7 +33,7 @@ func ProduceRoutes() func(l logrus.FieldLogger) http.Handler {
 		mapr.HandleFunc("/{mapId}/npcs", _map.HandleGetMapNPCsRequest(l)).Methods(http.MethodGet)
 		mapr.HandleFunc("/{mapId}/npcs/{npcId}", _map.HandleGetMapNPCRequest(l)).Methods(http.MethodGet)
 		mapr.HandleFunc("/{mapId}/monsters", _map.HandleGetMapMonstersRequest(l)).Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/dropPosition", _map.HandleGetMapDropPositionRequest(l)).Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/dropPosition", _map.HandleGetMapDropPositionRequest(l)).Methods(http.MethodPost)
 
 
 		return router
