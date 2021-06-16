@@ -197,11 +197,11 @@ type NPC struct {
 	objectId uint32
 	id       uint32
 	name     string
-	cy       uint32
+	cy       int16
 	f        uint32
-	fh       uint32
-	rx0      uint32
-	rx1      uint32
+	fh       uint16
+	rx0      int16
+	rx1      int16
 	x        int16
 	y        int16
 	hide     bool
@@ -212,11 +212,11 @@ type Monster struct {
 	id       uint32
 	mobTime  uint32
 	team     int32
-	cy       uint32
+	cy       int16
 	f        uint32
-	fh       uint32
-	rx0      uint32
-	rx1      uint32
+	fh       uint16
+	rx0      int16
+	rx1      int16
 	x        int16
 	y        int16
 	hide     bool

@@ -13,11 +13,11 @@ type DataBody struct {
 type Attributes struct {
 	Id   uint32 `json:"id"`
 	Name string `json:"name"`
-	CY   uint32 `json:"cy"`
+	CY   int16  `json:"cy"`
 	F    uint32 `json:"f"`
-	FH   uint32 `json:"fh"`
-	RX0  uint32 `json:"rx0"`
-	RX1  uint32 `json:"rx1"`
+	FH   uint16 `json:"fh"`
+	RX0  int16  `json:"rx0"`
+	RX1  int16  `json:"rx1"`
 	X    int16  `json:"x"`
 	Y    int16  `json:"y"`
 	Hide bool   `json:"hide"`
