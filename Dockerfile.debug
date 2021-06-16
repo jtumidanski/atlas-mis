@@ -29,7 +29,8 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /
 
 COPY --from=build-env /server /
-COPY --from=build-env /go/bin/dlv /
+COPY --from=build-env /go/bin/dlv
+COPY /wz /wz
 
 # Run delve
 CMD ["/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/server"]
