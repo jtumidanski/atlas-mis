@@ -90,12 +90,9 @@ type FootholdTree struct {
 	southWest *FootholdTree
 	southEast *FootholdTree
 	footholds []Foothold
-	p1X       int16
-	p1Y       int16
-	p2X       int16
-	p2Y       int16
-	centerX   int16
-	centerY   int16
+	p1        *point.Model
+	p2        *point.Model
+	center    *point.Model
 	depth     uint32
 	maxDropX  int16
 	minDropX  int16
@@ -106,36 +103,36 @@ func (f *FootholdTree) findBelow(initial *point.Model) *Foothold {
 	matches := make([]Foothold, 0)
 
 	for _, fh := range relevants {
-		if fh.firstX <= initial.X() && fh.secondX >= initial.X() {
+		if fh.first.X() <= initial.X() && fh.second.X() >= initial.X() {
 			matches = append(matches, fh)
 		}
 	}
 	sort.Slice(matches, func(i, j int) bool {
-		if matches[i].secondY < matches[j].firstY {
+		if matches[i].second.Y() < matches[j].first.Y() {
 			return true
 		}
 		return false
 	})
 	for _, fh := range matches {
 		if !fh.isWall() {
-			if fh.firstY != fh.secondY {
-				s1 := math.Abs(float64(fh.secondY - fh.firstY))
-				s2 := math.Abs(float64(fh.secondX - fh.firstX))
-				s4 := math.Abs(float64(initial.X() - fh.firstX))
+			if fh.first.Y() != fh.second.Y() {
+				s1 := math.Abs(float64(fh.second.Y() - fh.first.Y()))
+				s2 := math.Abs(float64(fh.second.X() - fh.first.X()))
+				s4 := math.Abs(float64(initial.X() - fh.first.X()))
 				alpha := math.Atan(s2 / s1)
 				beta := math.Atan(s1 / s2)
 				s5 := math.Cos(alpha) * (s4 / math.Cos(beta))
 				var calcY int16
-				if fh.secondY < fh.firstY {
-					calcY = fh.firstY - int16(s5)
+				if fh.second.Y() < fh.first.Y() {
+					calcY = fh.first.Y() - int16(s5)
 				} else {
-					calcY = fh.firstY + int16(s5)
+					calcY = fh.first.Y() + int16(s5)
 				}
 				if calcY >= initial.Y() {
 					return &fh
 				}
 			} else {
-				if fh.firstY >= initial.Y() {
+				if fh.first.Y() >= initial.Y() {
 					return &fh
 				}
 			}
@@ -149,11 +146,11 @@ func (f *FootholdTree) GetRelevant(point *point.Model) []Foothold {
 	results = append(results, f.footholds...)
 
 	if f.northWest != nil {
-		if point.X() <= f.centerX && point.Y() <= f.centerY {
+		if point.X() <= f.center.X() && point.Y() <= f.center.Y() {
 			results = append(results, f.northWest.GetRelevant(point)...)
-		} else if point.X() > f.centerX && point.Y() <= f.centerY {
+		} else if point.X() > f.center.X() && point.Y() <= f.center.Y() {
 			results = append(results, f.northEast.GetRelevant(point)...)
-		} else if point.X() <= f.centerX && point.Y() > f.centerY {
+		} else if point.X() <= f.center.X() && point.Y() > f.center.Y() {
 			results = append(results, f.southWest.GetRelevant(point)...)
 		} else {
 			results = append(results, f.southEast.GetRelevant(point)...)
@@ -163,15 +160,13 @@ func (f *FootholdTree) GetRelevant(point *point.Model) []Foothold {
 }
 
 type Foothold struct {
-	id      uint32
-	firstX  int16
-	firstY  int16
-	secondX int16
-	secondY int16
+	id     uint32
+	first  *point.Model
+	second *point.Model
 }
 
 func (f Foothold) isWall() bool {
-	return f.firstX == f.secondX
+	return f.first.X() == f.second.X()
 }
 
 type BackgroundType struct {

@@ -373,11 +373,9 @@ func getFootholdTree(exml *xml.Node) *FootholdTree {
 						continue
 					}
 					foothold := Foothold{
-						id:      uint32(id),
-						firstX:  x1,
-						firstY:  y1,
-						secondX: x2,
-						secondY: y2,
+						id:     uint32(id),
+						first:  point.NewModel(x1, y1),
+						second: point.NewModel(x2, y2),
 					}
 					if x1 < lx {
 						lx = x1

@@ -20,12 +20,9 @@ func NewFootholdTree(lx int16, ly int16, ux int16, uy int16, configurations ...F
 		southWest: nil,
 		southEast: nil,
 		footholds: make([]Foothold, 0),
-		p1X:       p1x,
-		p1Y:       p1y,
-		p2X:       p2x,
-		p2Y:       p2y,
-		centerX:   centerx,
-		centerY:   centery,
+		p1:        point.NewModel(p1x, p1y),
+		p2:        point.NewModel(p2x, p2y),
+		center:    point.NewModel(centerx, centery),
 		depth:     0,
 		maxDropX:  0,
 		minDropX:  0,
@@ -52,34 +49,34 @@ func (f *FootholdTree) Insert(footholds []Foothold) *FootholdTree {
 
 func (f *FootholdTree) InsertSingle(foothold Foothold) *FootholdTree {
 	if f.depth == 0 {
-		if foothold.firstX > f.maxDropX {
-			f.maxDropX = foothold.firstX
+		if foothold.first.X() > f.maxDropX {
+			f.maxDropX = foothold.first.X()
 		}
-		if foothold.firstX < f.minDropX {
-			f.minDropX = foothold.firstX
+		if foothold.first.X() < f.minDropX {
+			f.minDropX = foothold.first.X()
 		}
-		if foothold.secondX > f.maxDropX {
-			f.maxDropX = foothold.secondX
+		if foothold.second.X() > f.maxDropX {
+			f.maxDropX = foothold.second.X()
 		}
-		if foothold.secondX < f.minDropX {
-			f.minDropX = foothold.secondX
+		if foothold.second.X() < f.minDropX {
+			f.minDropX = foothold.second.X()
 		}
 
 	}
-	if f.depth == 8 || foothold.firstX >= f.p1X && foothold.secondX <= f.p2X && foothold.firstY >= f.p1Y && foothold.secondY <= f.p2Y {
+	if f.depth == 8 || foothold.first.X() >= f.p1.X() && foothold.second.X() <= f.p2.X() && foothold.first.Y() >= f.p1.Y() && foothold.second.Y() <= f.p2.Y() {
 		f.footholds = append(f.footholds, foothold)
 	} else {
 		if f.northWest == nil {
-			f.northWest = NewFootholdTree(f.p1X, f.p1Y, f.centerX, f.centerY, SetFootholdTreeDepth(f.depth+1))
-			f.northEast = NewFootholdTree(f.centerX, f.p1Y, f.p2X, f.centerY, SetFootholdTreeDepth(f.depth+1))
-			f.southWest = NewFootholdTree(f.p1X, f.centerY, f.centerX, f.p2Y, SetFootholdTreeDepth(f.depth+1))
-			f.southEast = NewFootholdTree(f.centerX, f.centerY, f.p2X, f.p2Y, SetFootholdTreeDepth(f.depth+1))
+			f.northWest = NewFootholdTree(f.p1.X(), f.p1.Y(), f.center.X(), f.center.Y(), SetFootholdTreeDepth(f.depth+1))
+			f.northEast = NewFootholdTree(f.center.X(), f.p1.Y(), f.p2.X(), f.center.Y(), SetFootholdTreeDepth(f.depth+1))
+			f.southWest = NewFootholdTree(f.p1.X(), f.center.Y(), f.center.X(), f.p2.Y(), SetFootholdTreeDepth(f.depth+1))
+			f.southEast = NewFootholdTree(f.center.X(), f.center.Y(), f.p2.X(), f.p2.Y(), SetFootholdTreeDepth(f.depth+1))
 		}
-		if foothold.secondX <= f.centerX && foothold.secondY <= f.centerY {
+		if foothold.second.X() <= f.center.X() && foothold.second.Y() <= f.center.Y() {
 			f.northWest = f.northWest.InsertSingle(foothold)
-		} else if foothold.firstX > f.centerX && foothold.secondY <= f.centerY {
+		} else if foothold.first.X() > f.center.X() && foothold.second.Y() <= f.center.Y() {
 			f.northEast = f.northEast.InsertSingle(foothold)
-		} else if foothold.secondX <= f.centerX && foothold.firstY > f.centerY {
+		} else if foothold.second.X() <= f.center.X() && foothold.first.Y() > f.center.Y() {
 			f.southWest = f.southWest.InsertSingle(foothold)
 		} else {
 			f.southEast = f.southEast.InsertSingle(foothold)
@@ -116,15 +113,15 @@ func calcPointBelow(tree *FootholdTree, initial *point.Model) *point.Model {
 		return nil
 	}
 
-	dropY := fh.firstY
-	if !fh.isWall() && fh.firstY != fh.secondY {
-		s1 := math.Abs(float64(fh.secondY - fh.firstY))
-		s2 := math.Abs(float64(fh.secondX - fh.firstX))
-		s5 := math.Cos(math.Atan(s2/s1)) * (math.Abs(float64(initial.X()-fh.firstX)) / math.Cos(math.Atan(s1/s2)))
-		if fh.secondY < fh.firstY {
-			dropY = fh.firstY - int16(s5)
+	dropY := fh.first.Y()
+	if !fh.isWall() && fh.first.Y() != fh.second.Y() {
+		s1 := math.Abs(float64(fh.second.Y() - fh.first.Y()))
+		s2 := math.Abs(float64(fh.second.X() - fh.first.X()))
+		s5 := math.Cos(math.Atan(s2/s1)) * (math.Abs(float64(initial.X()-fh.first.X())) / math.Cos(math.Atan(s1/s2)))
+		if fh.second.Y() < fh.first.Y() {
+			dropY = fh.first.Y() - int16(s5)
 		} else {
-			dropY = fh.firstY + int16(s5)
+			dropY = fh.first.Y() + int16(s5)
 		}
 	}
 	ret := point.NewModel(initial.X(), dropY)
