@@ -61,7 +61,7 @@ func (i *Node) GetString(name string, def string) string {
 func (i *Node) GetInteger(name string) (int32, error) {
 	for _, c := range i.IntegerNodes {
 		if c.Name == name {
-			res, err := strconv.ParseUint(c.Value, 10, 32)
+			res, err := strconv.ParseInt(c.Value, 10, 32)
 			if err != nil {
 				return 0, err
 			}
@@ -74,7 +74,7 @@ func (i *Node) GetInteger(name string) (int32, error) {
 func (i *Node) GetIntegerWithDefault(name string, def int32) int32 {
 	for _, c := range i.IntegerNodes {
 		if c.Name == name {
-			res, err := strconv.ParseUint(c.Value, 10, 32)
+			res, err := strconv.ParseInt(c.Value, 10, 32)
 			if err != nil {
 				return def
 			}

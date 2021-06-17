@@ -176,7 +176,7 @@ func getMapFromXML(mapId uint32, exml *xml.Node) (*Model, error) {
 	rp = bSearchDropPos(m.footholdTree, rp, fallback)
 	m.xLimit = XLimit{
 		min: uint32(lp.X() + 14),
-		max: uint32(rp.Y() - 14),
+		max: uint32(rp.X() - 14),
 	}
 	return m, nil
 }
@@ -363,34 +363,36 @@ func getFootholdTree(exml *xml.Node) *FootholdTree {
 	if err == nil {
 		for _, fc := range fr.ChildNodes {
 			for _, fh := range fc.ChildNodes {
-				x1 := int16(fh.GetIntegerWithDefault("x1", 0))
-				y1 := int16(fh.GetIntegerWithDefault("y1", 0))
-				x2 := int16(fh.GetFloatWithDefault("x2", 0))
-				y2 := int16(fh.GetIntegerWithDefault("y2", 0))
-				id, err := strconv.Atoi(fh.Name)
-				if err != nil {
-					continue
+				for _, f := range fh.ChildNodes {
+					x1 := int16(f.GetIntegerWithDefault("x1", 0))
+					y1 := int16(f.GetIntegerWithDefault("y1", 0))
+					x2 := int16(f.GetIntegerWithDefault("x2", 0))
+					y2 := int16(f.GetIntegerWithDefault("y2", 0))
+					id, err := strconv.Atoi(f.Name)
+					if err != nil {
+						continue
+					}
+					foothold := Foothold{
+						id:      uint32(id),
+						firstX:  x1,
+						firstY:  y1,
+						secondX: x2,
+						secondY: y2,
+					}
+					if x1 < lx {
+						lx = x1
+					}
+					if x2 > ux {
+						ux = x2
+					}
+					if y1 < ly {
+						ly = y1
+					}
+					if y2 > uy {
+						uy = y2
+					}
+					footholds = append(footholds, foothold)
 				}
-				foothold := Foothold{
-					id:      uint32(id),
-					firstX:  x1,
-					firstY:  y1,
-					secondX: x2,
-					secondY: y2,
-				}
-				if x1 < lx {
-					lx = x1
-				}
-				if x2 > ux {
-					ux = x2
-				}
-				if y1 < ly {
-					ly = y1
-				}
-				if y2 > uy {
-					uy = y2
-				}
-				footholds = append(footholds, foothold)
 			}
 		}
 	}
@@ -412,8 +414,8 @@ func getMapArea(exml *xml.Node, i *xml.Node) Rectangle {
 			return Rectangle{
 				x:      bounds[0],
 				y:      bounds[1],
-				width:  bounds[2],
-				height: bounds[3],
+				width:  bounds[3],
+				height: bounds[2],
 			}
 		} else {
 			dist := 1 << 18
