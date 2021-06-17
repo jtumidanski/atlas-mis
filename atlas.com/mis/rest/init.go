@@ -23,18 +23,20 @@ func ProduceRoutes() func(l logrus.FieldLogger) http.Handler {
 		monr.HandleFunc("/{monsterId}", monster.HandleGetMonsterRequest(l)).Methods(http.MethodGet)
 		monr.HandleFunc("/{monsterId}/loseItems", monster.HandleGetMonsterLoseItemsRequest(l)).Methods(http.MethodGet)
 
+		WithMap := _map.WithMap(l)
+		WithMapPortal := _map.WithMapPortal(l)
+		WithMapNPC := _map.WithMapNPC(l)
 		mapr := router.PathPrefix("/maps").Subrouter()
-		mapr.HandleFunc("/{mapId}", _map.HandleGetMapRequest(l)).Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/portals", _map.HandleGetMapPortalsByNameRequest(l)).Queries("name", "{name}").Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/portals", _map.HandleGetMapPortalsRequest(l)).Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/portals/{portalId}", _map.HandleGetMapPortalRequest(l)).Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/reactors", _map.HandleGetMapReactorsRequest(l)).Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/npcs", _map.HandleGetMapNPCsByObjectIdRequest(l)).Queries("objectId", "{objectId}").Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/npcs", _map.HandleGetMapNPCsRequest(l)).Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/npcs/{npcId}", _map.HandleGetMapNPCRequest(l)).Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/monsters", _map.HandleGetMapMonstersRequest(l)).Methods(http.MethodGet)
-		mapr.HandleFunc("/{mapId}/dropPosition", _map.HandleGetMapDropPositionRequest(l)).Methods(http.MethodPost)
-
+		mapr.HandleFunc("/{mapId}", WithMap(_map.HandleGetMapRequest(l))).Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/portals", WithMap(_map.HandleGetMapPortalsByNameRequest(l))).Queries("name", "{name}").Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/portals", WithMap(_map.HandleGetMapPortalsRequest(l))).Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/portals/{portalId}", WithMapPortal(_map.HandleGetMapPortalRequest(l))).Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/reactors", WithMap(_map.HandleGetMapReactorsRequest(l))).Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/npcs", WithMap(_map.HandleGetMapNPCsByObjectIdRequest(l))).Queries("objectId", "{objectId}").Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/npcs", WithMap(_map.HandleGetMapNPCsRequest(l))).Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/npcs/{npcId}", WithMapNPC(_map.HandleGetMapNPCRequest(l))).Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/monsters", WithMap(_map.HandleGetMapMonstersRequest(l))).Methods(http.MethodGet)
+		mapr.HandleFunc("/{mapId}/dropPosition", WithMap(_map.HandleGetMapDropPositionRequest(l))).Methods(http.MethodPost)
 
 		return router
 	}
