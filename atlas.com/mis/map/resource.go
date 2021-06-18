@@ -228,9 +228,9 @@ func makePortalListResult(portals []Portal, filters ...PortalFilter) *portal.Dat
 				ok = false
 				break
 			}
-			if ok {
-				result.Data = append(result.Data, makePortal(p))
-			}
+		}
+		if ok {
+			result.Data = append(result.Data, makePortal(p))
 		}
 	}
 	return result
