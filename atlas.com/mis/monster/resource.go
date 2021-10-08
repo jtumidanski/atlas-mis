@@ -8,6 +8,12 @@ import (
 	"strconv"
 )
 
+func InitResource(router *mux.Router, l logrus.FieldLogger) {
+	monr := router.PathPrefix("/monsters").Subrouter()
+	monr.HandleFunc("/{monsterId}", HandleGetMonsterRequest(l)).Methods(http.MethodGet)
+	monr.HandleFunc("/{monsterId}/loseItems", HandleGetMonsterLoseItemsRequest(l)).Methods(http.MethodGet)
+}
+
 func HandleGetMonsterRequest(l logrus.FieldLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)

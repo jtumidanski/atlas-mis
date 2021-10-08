@@ -15,6 +15,23 @@ import (
 	"strconv"
 )
 
+func InitResource(router *mux.Router, l logrus.FieldLogger) {
+	WithMap := WithMap(l)
+	WithMapPortal := WithMapPortal(l)
+	WithMapNPC := WithMapNPC(l)
+	mapr := router.PathPrefix("/maps").Subrouter()
+	mapr.HandleFunc("/{mapId}", WithMap(HandleGetMapRequest(l))).Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/portals", WithMap(HandleGetMapPortalsByNameRequest(l))).Queries("name", "{name}").Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/portals", WithMap(HandleGetMapPortalsRequest(l))).Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/portals/{portalId}", WithMapPortal(HandleGetMapPortalRequest(l))).Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/reactors", WithMap(HandleGetMapReactorsRequest(l))).Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/npcs", WithMap(HandleGetMapNPCsByObjectIdRequest(l))).Queries("objectId", "{objectId}").Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/npcs", WithMap(HandleGetMapNPCsRequest(l))).Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/npcs/{npcId}", WithMapNPC(HandleGetMapNPCRequest(l))).Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/monsters", WithMap(HandleGetMapMonstersRequest(l))).Methods(http.MethodGet)
+	mapr.HandleFunc("/{mapId}/dropPosition", WithMap(HandleGetMapDropPositionRequest(l))).Methods(http.MethodPost)
+}
+
 type MapHandlerFunc func(mapId uint32) http.HandlerFunc
 
 func WithMap(l logrus.FieldLogger) func(next MapHandlerFunc) http.HandlerFunc {
