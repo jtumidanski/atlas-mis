@@ -8,99 +8,191 @@ import (
 	"atlas-mis/point"
 	"atlas-mis/portal"
 	"atlas-mis/reactor"
+	"atlas-mis/rest"
 	"atlas-mis/rest/resource"
 	"github.com/gorilla/mux"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 )
 
+const (
+	getMap               = "get_map"
+	getMapPortalsByName  = "get_map_portals_by_name"
+	getMapPortals        = "get_map_portals"
+	getMapPortal         = "get_map_portal"
+	getMapReactors       = "get_map_reactors"
+	getMapNPCsByObjectId = "get_map_npcs_by_object_id"
+	getMapNPCs           = "get_map_npcs"
+	getMapNPC            = "get_map_npc"
+	getMapMonsters       = "get_map_monsters"
+	getMapDropPosition   = "get_map_drop_position"
+)
+
 func InitResource(router *mux.Router, l logrus.FieldLogger) {
-	WithMap := WithMap(l)
-	WithMapPortal := WithMapPortal(l)
-	WithMapNPC := WithMapNPC(l)
-	mapr := router.PathPrefix("/maps").Subrouter()
-	mapr.HandleFunc("/{mapId}", WithMap(HandleGetMapRequest(l))).Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/portals", WithMap(HandleGetMapPortalsByNameRequest(l))).Queries("name", "{name}").Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/portals", WithMap(HandleGetMapPortalsRequest(l))).Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/portals/{portalId}", WithMapPortal(HandleGetMapPortalRequest(l))).Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/reactors", WithMap(HandleGetMapReactorsRequest(l))).Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/npcs", WithMap(HandleGetMapNPCsByObjectIdRequest(l))).Queries("objectId", "{objectId}").Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/npcs", WithMap(HandleGetMapNPCsRequest(l))).Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/npcs/{npcId}", WithMapNPC(HandleGetMapNPCRequest(l))).Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/monsters", WithMap(HandleGetMapMonstersRequest(l))).Methods(http.MethodGet)
-	mapr.HandleFunc("/{mapId}/dropPosition", WithMap(HandleGetMapDropPositionRequest(l))).Methods(http.MethodPost)
+	r := router.PathPrefix("/maps").Subrouter()
+	r.HandleFunc("/{mapId}", registerGetMapRequest(l)).Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/portals", registerGetMapPortalsByNameRequest(l)).Queries("name", "{name}").Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/portals", registerGetMapPortalsRequest(l)).Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/portals/{portalId}", registerGetMapPortalRequest(l)).Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/reactors", registerGetMapReactorsRequest(l)).Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/npcs", registerGetMapNPCsByObjectIdRequest(l)).Queries("objectId", "{objectId}").Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/npcs", registerGetMapNPCsRequest(l)).Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/npcs/{npcId}", registerGetMapNPCRequest(l)).Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/monsters", registerGetMapMonstersRequest(l)).Methods(http.MethodGet)
+	r.HandleFunc("/{mapId}/dropPosition", registerGetMapDropPositionRequest(l)).Methods(http.MethodPost)
 }
 
-type MapHandlerFunc func(mapId uint32) http.HandlerFunc
-
-func WithMap(l logrus.FieldLogger) func(next MapHandlerFunc) http.HandlerFunc {
-	return func(next MapHandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			vars := mux.Vars(r)
-			mapId, err := strconv.Atoi(vars["mapId"])
-			if err != nil {
-				l.WithError(err).Errorf("Error parsing mapId as uint32")
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			next(uint32(mapId))(w, r)
-		}
-	}
+func registerGetMapDropPositionRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapDropPosition, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return handleGetMapDropPositionRequest(l)(span)(mapId)
+		})
+	})
 }
 
-type MapPortalHandlerFunc func(portalId uint32) MapHandlerFunc
-
-func WithMapPortal(l logrus.FieldLogger) func(next MapPortalHandlerFunc) http.HandlerFunc {
-	return func(next MapPortalHandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			vars := mux.Vars(r)
-			portalId, err := strconv.Atoi(vars["portalId"])
-			if err != nil {
-				l.WithError(err).Errorf("Error parsing portalId as uint32")
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			WithMap(l)(next(uint32(portalId)))(w, r)
-		}
-	}
+func registerGetMapMonstersRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapMonsters, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return handleGetMapMonstersRequest(l)(span)(mapId)
+		})
+	})
 }
 
-type MapNPCHandlerFunc func(npcId uint32) MapHandlerFunc
-
-func WithMapNPC(l logrus.FieldLogger) func(next MapNPCHandlerFunc) http.HandlerFunc {
-	return func(next MapNPCHandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			vars := mux.Vars(r)
-			npcId, err := strconv.Atoi(vars["npcId"])
-			if err != nil {
-				l.WithError(err).Errorf("Error parsing npcId as uint32")
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			WithMap(l)(next(uint32(npcId)))(w, r)
-		}
-	}
+func registerGetMapNPCRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapNPC, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return parseNPC(l, func(npcId uint32) http.HandlerFunc {
+				return handleGetMapNPCRequest(l)(span)(mapId)(npcId)
+			})
+		})
+	})
 }
 
-func HandleGetMapRequest(l logrus.FieldLogger) MapHandlerFunc {
-	return func(mapId uint32) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			m, err := GetRegistry().GetMap(mapId)
-			if err != nil {
-				l.WithError(err).Debugf("Unable to locate map %d.", mapId)
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
+func registerGetMapNPCsRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapNPCs, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return handleGetMapNPCsRequest(l)(span)(mapId)
+		})
+	})
+}
 
-			result := DataContainer{Data: makeMap(m)}
+func registerGetMapNPCsByObjectIdRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapNPCsByObjectId, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return handleGetMapNPCsByObjectIdRequest(l)(span)(mapId)
+		})
+	})
+}
 
-			w.WriteHeader(http.StatusOK)
-			err = json.ToJSON(result, w)
-			if err != nil {
-				l.WithError(err).Errorf("Writing response.")
-			}
+func registerGetMapReactorsRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapReactors, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return handleGetMapReactorsRequest(l)(span)(mapId)
+		})
+	})
+}
+
+func registerGetMapPortalRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapPortal, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return parsePortalId(l, func(portalId uint32) http.HandlerFunc {
+				return handleGetMapPortalRequest(l)(span)(mapId)(portalId)
+			})
+		})
+	})
+}
+
+func registerGetMapPortalsRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapPortals, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return handleGetMapPortalsRequest(l)(span)(mapId)
+		})
+	})
+}
+
+func registerGetMapPortalsByNameRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMapPortalsByName, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return handleGetMapPortalsByNameRequest(l)(span)(mapId)
+		})
+	})
+}
+
+type mapIdHandler func(mapId uint32) http.HandlerFunc
+
+func parseMapId(l logrus.FieldLogger, next mapIdHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		mapId, err := strconv.Atoi(vars["mapId"])
+		if err != nil {
+			l.WithError(err).Errorf("Error parsing mapId as uint32")
+			w.WriteHeader(http.StatusBadRequest)
 			return
+		}
+		next(uint32(mapId))(w, r)
+	}
+}
+
+type portalIdHandler func(portalId uint32) http.HandlerFunc
+
+func parsePortalId(l logrus.FieldLogger, next portalIdHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		portalId, err := strconv.Atoi(vars["portalId"])
+		if err != nil {
+			l.WithError(err).Errorf("Error parsing portalId as uint32")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		next(uint32(portalId))(w, r)
+	}
+}
+
+type npcHandler func(npcId uint32) http.HandlerFunc
+
+func parseNPC(l logrus.FieldLogger, next npcHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		npcId, err := strconv.Atoi(vars["npcId"])
+		if err != nil {
+			l.WithError(err).Errorf("Error parsing npcId as uint32")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		next(uint32(npcId))(w, r)
+	}
+}
+
+func registerGetMapRequest(l logrus.FieldLogger) http.HandlerFunc {
+	return rest.RetrieveSpan(getMap, func(span opentracing.Span) http.HandlerFunc {
+		return parseMapId(l, func(mapId uint32) http.HandlerFunc {
+			return handleGetMapRequest(l)(span)(mapId)
+		})
+	})
+}
+
+func handleGetMapRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+		return func(mapId uint32) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				m, err := GetRegistry().GetMap(mapId)
+				if err != nil {
+					l.WithError(err).Debugf("Unable to locate map %d.", mapId)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+
+				result := DataContainer{Data: makeMap(m)}
+
+				w.WriteHeader(http.StatusOK)
+				err = json.ToJSON(result, w)
+				if err != nil {
+					l.WithError(err).Errorf("Writing response.")
+				}
+				return
+			}
 		}
 	}
 }
@@ -165,55 +257,8 @@ func makeRectangleAttributes(area Rectangle) rectangleAttributes {
 	}
 }
 
-func HandleGetMapPortalsRequest(l logrus.FieldLogger) MapHandlerFunc {
-	return func(mapId uint32) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			m, err := GetRegistry().GetMap(mapId)
-			if err != nil {
-				l.WithError(err).Debugf("Unable to locate map %d.", mapId)
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-
-			result := makePortalListResult(m.portals)
-
-			w.WriteHeader(http.StatusOK)
-			err = json.ToJSON(result, w)
-			if err != nil {
-				l.WithError(err).Errorf("Writing response.")
-			}
-			return
-		}
-	}
-}
-
-func HandleGetMapPortalsByNameRequest(l logrus.FieldLogger) MapHandlerFunc {
-	return func(mapId uint32) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			vars := mux.Vars(r)
-			portalName := vars["name"]
-
-			m, err := GetRegistry().GetMap(mapId)
-			if err != nil {
-				l.WithError(err).Debugf("Unable to locate map %d.", mapId)
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-
-			result := makePortalListResult(m.portals, PortalNameFilter(portalName))
-
-			w.WriteHeader(http.StatusOK)
-			err = json.ToJSON(result, w)
-			if err != nil {
-				l.WithError(err).Errorf("Writing response.")
-			}
-			return
-		}
-	}
-}
-
-func HandleGetMapPortalRequest(l logrus.FieldLogger) MapPortalHandlerFunc {
-	return func(portalId uint32) MapHandlerFunc {
+func handleGetMapPortalsRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
 		return func(mapId uint32) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				m, err := GetRegistry().GetMap(mapId)
@@ -223,7 +268,7 @@ func HandleGetMapPortalRequest(l logrus.FieldLogger) MapPortalHandlerFunc {
 					return
 				}
 
-				result := makePortalListResult(m.portals, PortalIdFilter(portalId))
+				result := makePortalListResult(m.portals)
 
 				w.WriteHeader(http.StatusOK)
 				err = json.ToJSON(result, w)
@@ -231,6 +276,59 @@ func HandleGetMapPortalRequest(l logrus.FieldLogger) MapPortalHandlerFunc {
 					l.WithError(err).Errorf("Writing response.")
 				}
 				return
+			}
+		}
+	}
+}
+
+func handleGetMapPortalsByNameRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+		return func(mapId uint32) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				vars := mux.Vars(r)
+				portalName := vars["name"]
+
+				m, err := GetRegistry().GetMap(mapId)
+				if err != nil {
+					l.WithError(err).Debugf("Unable to locate map %d.", mapId)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+
+				result := makePortalListResult(m.portals, PortalNameFilter(portalName))
+
+				w.WriteHeader(http.StatusOK)
+				err = json.ToJSON(result, w)
+				if err != nil {
+					l.WithError(err).Errorf("Writing response.")
+				}
+				return
+			}
+		}
+	}
+}
+
+func handleGetMapPortalRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) func(portalId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) func(portalId uint32) http.HandlerFunc {
+		return func(mapId uint32) func(portalId uint32) http.HandlerFunc {
+			return func(portalId uint32) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					m, err := GetRegistry().GetMap(mapId)
+					if err != nil {
+						l.WithError(err).Debugf("Unable to locate map %d.", mapId)
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+
+					result := makePortalListResult(m.portals, PortalIdFilter(portalId))
+
+					w.WriteHeader(http.StatusOK)
+					err = json.ToJSON(result, w)
+					if err != nil {
+						l.WithError(err).Errorf("Writing response.")
+					}
+					return
+				}
 			}
 		}
 	}
@@ -283,27 +381,29 @@ func makePortal(p Portal) portal.DataBody {
 	}
 }
 
-func HandleGetMapReactorsRequest(l logrus.FieldLogger) MapHandlerFunc {
-	return func(mapId uint32) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			m, err := GetRegistry().GetMap(mapId)
-			if err != nil {
-				l.WithError(err).Debugf("Unable to locate map %d.", mapId)
-				w.WriteHeader(http.StatusNotFound)
+func handleGetMapReactorsRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+		return func(mapId uint32) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				m, err := GetRegistry().GetMap(mapId)
+				if err != nil {
+					l.WithError(err).Debugf("Unable to locate map %d.", mapId)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+
+				result := &reactor.DataListContainer{Data: make([]reactor.DataBody, 0)}
+				for _, r := range m.reactors {
+					result.Data = append(result.Data, makeReactor(r))
+				}
+
+				w.WriteHeader(http.StatusOK)
+				err = json.ToJSON(result, w)
+				if err != nil {
+					l.WithError(err).Errorf("Writing response.")
+				}
 				return
 			}
-
-			result := &reactor.DataListContainer{Data: make([]reactor.DataBody, 0)}
-			for _, r := range m.reactors {
-				result.Data = append(result.Data, makeReactor(r))
-			}
-
-			w.WriteHeader(http.StatusOK)
-			err = json.ToJSON(result, w)
-			if err != nil {
-				l.WithError(err).Errorf("Writing response.")
-			}
-			return
 		}
 	}
 }
@@ -322,54 +422,58 @@ func makeReactor(r Reactor) reactor.DataBody {
 	}
 }
 
-func HandleGetMapNPCsByObjectIdRequest(l logrus.FieldLogger) MapHandlerFunc {
-	return func(mapId uint32) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			vars := mux.Vars(r)
-			objectId, err := strconv.Atoi(vars["objectId"])
-			if err != nil {
-				l.WithError(err).Errorf("Error parsing objectId as uint32")
-				w.WriteHeader(http.StatusBadRequest)
+func handleGetMapNPCsByObjectIdRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+		return func(mapId uint32) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				vars := mux.Vars(r)
+				objectId, err := strconv.Atoi(vars["objectId"])
+				if err != nil {
+					l.WithError(err).Errorf("Error parsing objectId as uint32")
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+
+				m, err := GetRegistry().GetMap(mapId)
+				if err != nil {
+					l.WithError(err).Debugf("Unable to locate map %d.", mapId)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+
+				result := makeNPCListResult(m.npcs, NPCObjectIdFilter(uint32(objectId)))
+
+				w.WriteHeader(http.StatusOK)
+				err = json.ToJSON(result, w)
+				if err != nil {
+					l.WithError(err).Errorf("Writing response.")
+				}
 				return
 			}
-
-			m, err := GetRegistry().GetMap(mapId)
-			if err != nil {
-				l.WithError(err).Debugf("Unable to locate map %d.", mapId)
-				w.WriteHeader(http.StatusNotFound)
-				return
-			}
-
-			result := makeNPCListResult(m.npcs, NPCObjectIdFilter(uint32(objectId)))
-
-			w.WriteHeader(http.StatusOK)
-			err = json.ToJSON(result, w)
-			if err != nil {
-				l.WithError(err).Errorf("Writing response.")
-			}
-			return
 		}
 	}
 }
 
-func HandleGetMapNPCsRequest(l logrus.FieldLogger) MapHandlerFunc {
-	return func(mapId uint32) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			m, err := GetRegistry().GetMap(mapId)
-			if err != nil {
-				l.WithError(err).Debugf("Unable to locate map %d.", mapId)
-				w.WriteHeader(http.StatusNotFound)
+func handleGetMapNPCsRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+		return func(mapId uint32) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				m, err := GetRegistry().GetMap(mapId)
+				if err != nil {
+					l.WithError(err).Debugf("Unable to locate map %d.", mapId)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+
+				result := makeNPCListResult(m.npcs)
+
+				w.WriteHeader(http.StatusOK)
+				err = json.ToJSON(result, w)
+				if err != nil {
+					l.WithError(err).Errorf("Writing response.")
+				}
 				return
 			}
-
-			result := makeNPCListResult(m.npcs)
-
-			w.WriteHeader(http.StatusOK)
-			err = json.ToJSON(result, w)
-			if err != nil {
-				l.WithError(err).Errorf("Writing response.")
-			}
-			return
 		}
 	}
 }
@@ -405,25 +509,27 @@ func NPCObjectIdFilter(id uint32) NPCFilter {
 	}
 }
 
-func HandleGetMapNPCRequest(l logrus.FieldLogger) MapNPCHandlerFunc {
-	return func(npcId uint32) MapHandlerFunc {
-		return func(mapId uint32) http.HandlerFunc {
-			return func(w http.ResponseWriter, r *http.Request) {
-				m, err := GetRegistry().GetMap(mapId)
-				if err != nil {
-					l.WithError(err).Debugf("Unable to locate map %d.", mapId)
-					w.WriteHeader(http.StatusNotFound)
+func handleGetMapNPCRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) func(npcId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) func(npcId uint32) http.HandlerFunc {
+		return func(mapId uint32) func(npcId uint32) http.HandlerFunc {
+			return func(npcId uint32) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					m, err := GetRegistry().GetMap(mapId)
+					if err != nil {
+						l.WithError(err).Debugf("Unable to locate map %d.", mapId)
+						w.WriteHeader(http.StatusNotFound)
+						return
+					}
+
+					result := makeNPCListResult(m.npcs, NPCIdFilter(npcId))
+
+					w.WriteHeader(http.StatusOK)
+					err = json.ToJSON(result, w)
+					if err != nil {
+						l.WithError(err).Errorf("Writing response.")
+					}
 					return
 				}
-
-				result := makeNPCListResult(m.npcs, NPCIdFilter(npcId))
-
-				w.WriteHeader(http.StatusOK)
-				err = json.ToJSON(result, w)
-				if err != nil {
-					l.WithError(err).Errorf("Writing response.")
-				}
-				return
 			}
 		}
 	}
@@ -448,27 +554,29 @@ func makeNPC(n NPC) npc.DataBody {
 	}
 }
 
-func HandleGetMapMonstersRequest(l logrus.FieldLogger) MapHandlerFunc {
-	return func(mapId uint32) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			m, err := GetRegistry().GetMap(mapId)
-			if err != nil {
-				l.WithError(err).Debugf("Unable to locate map %d.", mapId)
-				w.WriteHeader(http.StatusNotFound)
+func handleGetMapMonstersRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+		return func(mapId uint32) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				m, err := GetRegistry().GetMap(mapId)
+				if err != nil {
+					l.WithError(err).Debugf("Unable to locate map %d.", mapId)
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+
+				result := &monster.DataListContainer{Data: make([]monster.DataBody, 0)}
+				for _, n := range m.monsters {
+					result.Data = append(result.Data, makeMonster(n))
+				}
+
+				w.WriteHeader(http.StatusOK)
+				err = json.ToJSON(result, w)
+				if err != nil {
+					l.WithError(err).Errorf("Writing response.")
+				}
 				return
 			}
-
-			result := &monster.DataListContainer{Data: make([]monster.DataBody, 0)}
-			for _, n := range m.monsters {
-				result.Data = append(result.Data, makeMonster(n))
-			}
-
-			w.WriteHeader(http.StatusOK)
-			err = json.ToJSON(result, w)
-			if err != nil {
-				l.WithError(err).Errorf("Writing response.")
-			}
-			return
 		}
 	}
 }
@@ -493,39 +601,41 @@ func makeMonster(n Monster) monster.DataBody {
 	}
 }
 
-func HandleGetMapDropPositionRequest(l logrus.FieldLogger) MapHandlerFunc {
-	return func(mapId uint32) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			li := &DropPositionInputDataContainer{}
-			err := json.FromJSON(li, r.Body)
-			if err != nil {
-				l.WithError(err).Errorf("Deserializing input.")
-				w.WriteHeader(http.StatusBadRequest)
-				err = json.ToJSON(&resource.GenericError{Message: err.Error()}, w)
+func handleGetMapDropPositionRequest(l logrus.FieldLogger) func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+	return func(span opentracing.Span) func(mapId uint32) http.HandlerFunc {
+		return func(mapId uint32) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				li := &DropPositionInputDataContainer{}
+				err := json.FromJSON(li, r.Body)
 				if err != nil {
-					l.WithError(err).Fatalf("Writing error message.")
+					l.WithError(err).Errorf("Deserializing input.")
+					w.WriteHeader(http.StatusBadRequest)
+					err = json.ToJSON(&resource.GenericError{Message: err.Error()}, w)
+					if err != nil {
+						l.WithError(err).Fatalf("Writing error message.")
+					}
+					return
+				}
+
+				attr := li.Data.Attributes
+				p := calcDropPos(mapId, point.NewModel(attr.InitialX, attr.InitialY), point.NewModel(attr.FallbackX, attr.FallbackY))
+
+				result := &point2.DataContainer{Data: point2.DataBody{
+					Id:   "0",
+					Type: "",
+					Attributes: point2.Attributes{
+						X: p.X(),
+						Y: p.Y(),
+					},
+				}}
+
+				w.WriteHeader(http.StatusOK)
+				err = json.ToJSON(result, w)
+				if err != nil {
+					l.WithError(err).Errorf("Writing response.")
 				}
 				return
 			}
-
-			attr := li.Data.Attributes
-			p := calcDropPos(mapId, point.NewModel(attr.InitialX, attr.InitialY), point.NewModel(attr.FallbackX, attr.FallbackY))
-
-			result := &point2.DataContainer{Data: point2.DataBody{
-				Id:   "0",
-				Type: "",
-				Attributes: point2.Attributes{
-					X: p.X(),
-					Y: p.Y(),
-				},
-			}}
-
-			w.WriteHeader(http.StatusOK)
-			err = json.ToJSON(result, w)
-			if err != nil {
-				l.WithError(err).Errorf("Writing response.")
-			}
-			return
 		}
 	}
 }
