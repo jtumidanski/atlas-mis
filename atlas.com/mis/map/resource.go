@@ -629,7 +629,7 @@ func handleGetMapDropPositionRequest(l logrus.FieldLogger) func(span opentracing
 					},
 				}}
 
-				w.WriteHeader(http.StatusOK)
+				w.WriteHeader(http.StatusCreated)
 				err = json.ToJSON(result, w)
 				if err != nil {
 					l.WithError(err).Errorf("Writing response.")
